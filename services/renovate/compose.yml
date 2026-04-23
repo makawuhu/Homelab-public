@@ -1,0 +1,28 @@
+# Renovate runs as a one-shot job — NOT a persistent service.
+# Run via: docker compose run --rm renovate
+# Or via cron calling run.sh
+# Migrated from CT 102 to CT 103 on 2026-04-19.
+
+services:
+  renovate:
+    image: renovate/renovate:38
+    container_name: renovate-run
+    env_file: .env
+    volumes:
+      - renovate-cache:/tmp/renovate/cache
+      - ./renovate.json:/usr/src/app/renovate.json:ro
+    environment:
+      - RENOVATE_PLATFORM=gitea
+      - RENOVATE_ENDPOINT=http://192.168.x.48:3010
+      - RENOVATE_GIT_AUTHOR=Renovate Bot <renovate-bot@yourdomain.com>
+      - RENOVATE_ONBOARDING=false
+      - RENOVATE_REQUIRE_CONFIG=optional
+      - RENOVATE_CONFIG_FILE=/usr/src/app/renovate.json
+      - LOG_LEVEL=info
+      - RENOVATE_CACHE_DIR=/tmp/renovate/cache
+    security_opt:
+      - apparmor=unconfined
+    # No restart — one-shot job
+
+volumes:
+  renovate-cache:

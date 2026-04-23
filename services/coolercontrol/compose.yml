@@ -1,0 +1,10 @@
+services:
+  coolercontrold:
+    image: coolercontrol/coolercontrold
+    container_name: coolercontrold
+    ports:
+      - "11987:11987"
+    volumes:
+      - /mnt/media/coolercontrol-config:/etc/coolercontrol
+    restart: unless-stopped
+    privileged: true

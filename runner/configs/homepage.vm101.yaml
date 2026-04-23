@@ -1,0 +1,10 @@
+# Homepage — runner-managed service on VM 101
+service: homepage
+repo_path: /opt/homelab
+compose_path: services/homepage/compose.yml
+deploy_command: "docker compose up -d --remove-orphans"
+health_check: "curl -sf http://localhost:3005/"
+health_timeout: 30
+rollback_allowed: true
+shadow: true
+kuma_push_url: ""

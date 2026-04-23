@@ -1,0 +1,4 @@
+HOST=192.168.x.5
+BUILD=true
+SOURCE_PATH=/opt/honcho
+GITHUB_REPO=https://github.com/plastic-labs/honcho

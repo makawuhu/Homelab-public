@@ -1,0 +1,141 @@
+version: 1
+# First matching rule wins. default_action applies if no rule matches.
+default_action: needs-review
+
+# Host-level overrides are evaluated before global rules.
+# Use host short-names matching the HOSTS list in orchestrate.sh.
+host_overrides:
+  pve:
+    - match: "*"
+      action: needs-review
+      reason: "PVE host — all upgrades require review to avoid VM/LXC downtime"
+
+rules:
+  # --- Always auto: low blast-radius utilities ---
+  - match: "ca-certificates"
+    action: auto
+
+  - match: "openssl"
+    action: auto
+    semver_constraint: "~patch"
+    reason: "OpenSSL — auto on patch only; minor/major needs review"
+
+  - match: "libssl*"
+    action: auto
+    semver_constraint: "~patch"
+
+  - match: "curl"
+    action: auto
+    semver_constraint: "~patch"
+
+  - match: "wget"
+    action: auto
+
+  - match: "apt"
+    action: auto
+    semver_constraint: "~patch"
+
+  - match: "apt-utils"
+    action: auto
+
+  - match: "base-files"
+    action: auto
+
+  - match: "bash"
+    action: auto
+    semver_constraint: "~patch"
+
+  - match: "cron"
+    action: auto
+
+  - match: "tzdata"
+    action: auto
+
+  - match: "python3-minimal"
+    action: auto
+
+  - match: "vim*"
+    action: auto
+
+  - match: "nano"
+    action: auto
+
+  - match: "less"
+    action: auto
+
+  - match: "openssh-client"
+    action: auto
+    semver_constraint: "~patch"
+
+  - match: "openssh-server"
+    action: auto
+    semver_constraint: "~patch"
+
+  # --- Docker: patch auto, minor/major needs review ---
+  - match: "docker-ce"
+    action: auto
+    semver_constraint: "~patch"
+    reason: "Docker daemon — minor/major versions can change containerd ABI"
+
+  - match: "docker-ce-cli"
+    action: auto
+    semver_constraint: "~patch"
+    reason: "Docker CLI — keep in sync with daemon"
+
+  - match: "containerd.io"
+    action: auto
+    semver_constraint: "~patch"
+    reason: "containerd — minor/major versions need review"
+
+  - match: "docker-buildx-plugin"
+    action: auto
+    semver_constraint: "~minor"
+
+  - match: "docker-compose-plugin"
+    action: auto
+    semver_constraint: "~minor"
+
+  # --- Python: minor is effectively breaking ---
+  - match: "python3"
+    action: auto
+    semver_constraint: "~patch"
+    reason: "Python minor versions break venvs and typing"
+
+  - match: "python3.*"
+    action: auto
+    semver_constraint: "~patch"
+
+  # --- Node: major = LTS boundary ---
+  - match: "nodejs"
+    action: needs-review
+    reason: "Node major = LTS boundary — always review"
+
+  # --- Always review: kernel, bootloader, init ---
+  - match: "linux-image-*"
+    action: needs-review
+    reason: "Kernel upgrade — requires reboot, risk on ZFS/GPU passthrough systems"
+
+  - match: "linux-headers-*"
+    action: needs-review
+
+  - match: "proxmox-kernel*"
+    action: needs-review
+    reason: "PVE kernel — verify GPU passthrough compatibility before applying"
+
+  - match: "pve-kernel*"
+    action: needs-review
+
+  - match: "grub*"
+    action: needs-review
+    reason: "Bootloader — always review"
+
+  - match: "systemd"
+    action: needs-review
+    reason: "Init system — version bumps can affect LXC startup behavior"
+
+  - match: "libc6"
+    action: needs-review
+    reason: "glibc — breaks all dynamically linked binaries if upgrade goes wrong"
+
+  - match: "libc-bin"
+    action: needs-review

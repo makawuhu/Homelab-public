@@ -1,0 +1,19 @@
+services:
+  autoforge-ui:
+    build: .
+    container_name: autoforge-ui
+    restart: unless-stopped
+    ports:
+      - "8055:8000"
+    environment:
+      - HUEFORGE_BASE=/data/hueforge
+      - TRUCK_REF_PATH=${TRUCK_REF_PATH:-/data/hueforge/Truckee river test/truckee-river_Front_200x133.3mf}
+      - RUNPOD_API_KEY=${RUNPOD_API_KEY}
+      - RUNPOD_POD_ID=${RUNPOD_POD_ID}
+      - RUNPOD_SSH_KEY_PATH=/run/secrets/runpod-ssh-key
+      - LOCAL_GPU_HOST=${LOCAL_GPU_HOST:-192.168.x.5}
+    volumes:
+      - /mnt/media/claude/hueforge:/data/hueforge
+      - /root/.secrets/autoforge-ssh-key:/run/secrets/runpod-ssh-key:ro
+    env_file:
+      - .env

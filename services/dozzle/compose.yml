@@ -1,0 +1,12 @@
+# GitOps deploy pilot — managed via .deploy metadata
+services:
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: dozzle
+    ports:
+      - "8888:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - TZ=America/Los_Angeles
+    restart: unless-stopped

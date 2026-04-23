@@ -1,0 +1,25 @@
+services:
+  ollama:
+    image: ollama/ollama:0.21.0
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - /mnt/media/ollama:/root/.ollama
+    environment:
+      - OLLAMA_IDENTITY_KEY_B64=${OLLAMA_IDENTITY_KEY_B64:-}
+      - OLLAMA_IDENTITY_PUBKEY_B64=${OLLAMA_IDENTITY_PUBKEY_B64:-}
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    entrypoint:
+      - sh
+      - -c
+      - "mkdir -p /root/.ollama && if [ -n \"$$OLLAMA_IDENTITY_KEY_B64\" ]; then printf '%s' \"$$OLLAMA_IDENTITY_KEY_B64\" | base64 -d > /root/.ollama/id_ed25519 && chmod 600 /root/.ollama/id_ed25519 && printf '%s' \"$$OLLAMA_IDENTITY_PUBKEY_B64\" | base64 -d > /root/.ollama/id_ed25519.pub; fi && exec ollama serve"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped

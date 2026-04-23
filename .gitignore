@@ -1,0 +1,17 @@
+*.env
+!*.env.example
+!*.env.sops
+secrets/*
+!secrets/*.sops
+certs/
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+data/
+*.log
+__pycache__/
+node_modules/
+.DS_Store

@@ -1,0 +1,34 @@
+- id: webhook-handler
+  execute-command: /scripts/webhook-handler.sh
+  command-working-directory: /opt/homelab
+  response-message: Processing webhook...
+  trigger-rule-mismatch-http-response-code: 200
+  trigger-rule:
+    match:
+      type: value
+      value: refs/heads/main
+      parameter:
+        source: payload
+        name: ref
+
+- id: max-deploy
+  execute-command: /scripts/max-deploy.sh
+  command-working-directory: /tmp
+  response-message: Max deploy notification queued...
+  pass-arguments-to-command:
+    - source: payload
+      name: after
+    - source: payload
+      name: head_commit.message
+    - source: payload
+      name: head_commit.author.name
+    - source: payload
+      name: repository.full_name
+  trigger-rule-mismatch-http-response-code: 200
+  trigger-rule:
+    match:
+      type: value
+      value: refs/heads/main
+      parameter:
+        source: payload
+        name: ref

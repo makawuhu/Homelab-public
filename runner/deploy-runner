@@ -1,0 +1,190 @@
+#!/usr/bin/env bash
+# deploy-runner — Host-local deployment runner
+# Triggered by systemd: systemctl start deploy-runner@<service>
+# Reads config from /etc/deploy-runner/<service>.yaml
+set -euo pipefail
+
+SERVICE="${1:?Usage: deploy-runner <service>}"
+CONFIG_DIR="/etc/deploy-runner"
+CONFIG_FILE="${CONFIG_DIR}/${SERVICE}.yaml"
+LOG_DIR="/var/log/deploy-runner"
+HEARTBEAT_FILE="/var/lib/deploy-runner/heartbeat"
+REPO_PATH=""  # populated from config
+
+# ── Utilities ──────────────────────────────────────────────────────────────────
+
+log() { echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] runner[${SERVICE}]: $*"; }
+
+die() { log "FATAL: $*"; emit_result "failure" "" "$*"; exit 1; }
+
+read_config() {
+    if [ ! -f "$CONFIG_FILE" ]; then
+        die "Config not found: $CONFIG_FILE"
+    fi
+    # Simple YAML key-value parser (no arrays, no nesting)
+    REPO_PATH=$(grep '^repo_path:' "$CONFIG_FILE" | awk '{print $2}' | tr -d '"' || true)
+    COMPOSE_PATH=$(grep '^compose_path:' "$CONFIG_FILE" | awk '{print $2}' | tr -d '"' || true)
+    DEPLOY_COMMAND=$(grep '^deploy_command:' "$CONFIG_FILE" | sed 's/^deploy_command: *//' | tr -d '"' || true)
+    HEALTH_CHECK=$(grep '^health_check:' "$CONFIG_FILE" | sed 's/^health_check: *//' | tr -d '"' || true)
+    HEALTH_TIMEOUT=$(grep '^health_timeout:' "$CONFIG_FILE" | awk '{print $2}' | tr -d '"' || true)
+    HEALTH_TIMEOUT=${HEALTH_TIMEOUT:-30}
+    ROLLBACK_ALLOWED=$(grep '^rollback_allowed:' "$CONFIG_FILE" | awk '{print $2}' | tr -d '"' | tr '[:upper:]' '[:lower:]' || true)
+    SHADOW=$(grep '^shadow:' "$CONFIG_FILE" | awk '{print $2}' | tr -d '"' | tr '[:upper:]' '[:lower:]' || true)
+    SHADOW=${SHADOW:-false}
+    REVISION=$(grep '^revision:' "$CONFIG_FILE" | awk '{print $2}' | tr -d '"' || true)
+}
+
+emit_result() {
+    local status="$1"
+    local health="$2"
+    local error="$3"
+    local duration=$(( SECONDS ))
+
+    mkdir -p "$LOG_DIR" "$HEARTBEAT_DIR"
+
+    cat > "${LOG_DIR}/${SERVICE}-$(date -u +%Y%m%d%H%M%S).json" <<EOF
+{
+  "service": "${SERVICE}",
+  "host": "$(hostname)",
+  "revision": "${REVISION:-unknown}",
+  "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "status": "${status}",
+  "health_check": "${health}",
+  "duration_seconds": ${duration},
+  "error": "${error}"
+}
+EOF
+
+    # Touch heartbeat
+    touch "$HEARTBEAT_FILE"
+
+    # Report to Uptime Kuma push monitor if configured
+    KUMA_PUSH=$(grep '^kuma_push_url:' "$CONFIG_FILE" | awk '{print $2}' | tr -d '"' || true)
+    if [ -n "$KUMA_PUSH" ]; then
+        if [ "$status" = "success" ]; then
+            curl -sf "${KUMA_PUSH}?status=up&msg=${SERVICE}+deploy+success" || true
+        else
+            curl -sf "${KUMA_PUSH}?status=down&msg=${SERVICE}+deploy+failed" || true
+        fi
+    fi
+
+    log "Result: ${status}, health: ${health}, duration: ${duration}s"
+}
+
+# ── Main ────────────────────────────────────────────────────────────────────────
+
+SECONDS=0
+HEARTBEAT_DIR="$(dirname "$HEARTBEAT_FILE")"
+mkdir -p "$HEARTBEAT_DIR"
+
+log "Starting deployment for ${SERVICE}"
+read_config
+
+# Validate required config
+[ -n "$REPO_PATH" ] || die "repo_path not set in config"
+[ -n "$COMPOSE_PATH" ] || die "compose_path not set in config"
+[ -n "$DEPLOY_COMMAND" ] || die "deploy_command not set in config"
+
+cd "$REPO_PATH"
+
+# ── Pull latest ────────────────────────────────────────────────────────────────
+log "Pulling repo..."
+git fetch origin main
+if [ -n "$REVISION" ]; then
+    git checkout "$REVISION" 2>/dev/null || die "Cannot checkout revision ${REVISION}"
+else
+    git reset --hard origin/main
+fi
+REVISION=$(git rev-parse --short HEAD)
+log "At revision ${REVISION}"
+
+# ── Check if service changed ───────────────────────────────────────────────────
+PREV_REVISION=$(cat "${HEARTBEAT_DIR}/${SERVICE}.last-rev" 2>/dev/null || echo "")
+if [ "$REVISION" = "$PREV_REVISION" ]; then
+    log "No revision change (${REVISION}), skipping deploy"
+    emit_result "success" "skip" "no change"
+    exit 0
+fi
+
+# ── Decrypt secrets if needed ─────────────────────────────────────────────────
+SECRETS_SECTION=false
+while IFS= read -r line; do
+    if [[ "$line" == "secrets:" ]]; then
+        SECRETS_SECTION=true
+        continue
+    fi
+    if $SECRETS_SECTION; then
+        # Stop at next top-level key
+        if [[ "$line" =~ ^[a-z] ]]; then
+            SECRETS_SECTION=false
+            continue
+        fi
+        # Parse - path: / target: / encrypted:
+        if [[ "$line" =~ path:.* ]]; then
+            SEC_PATH=$(echo "$line" | sed 's/.*path: *//' | tr -d '"' | tr -d ' ')
+        elif [[ "$line" =~ target:.* ]]; then
+            SEC_TARGET=$(echo "$line" | sed 's/.*target: *//' | tr -d '"' | tr -d ' ')
+        elif [[ "$line" =~ encrypted:.* ]]; then
+            SEC_ENCRYPTED=$(echo "$line" | sed 's/.*encrypted: *//' | tr -d '"' | tr -d ' ')
+            if [ "$SEC_ENCRYPTED" = "true" ] && [ -n "$SEC_PATH" ] && [ -n "$SEC_TARGET" ]; then
+                log "Decrypting ${SEC_PATH} → ${SEC_TARGET}"
+                if [ "$SHADOW" = "true" ]; then
+                    log "SHADOW: would decrypt ${SEC_PATH}"
+                else
+                    SOPS_AGE_KEY_FILE=/root/.age/key.txt sops --decrypt \
+                        --input-type dotenv --output-type dotenv \
+                        "${REPO_PATH}/${SEC_PATH}" \
+                        > "${REPO_PATH}/${SEC_TARGET}" || die "SOPS decrypt failed for ${SEC_PATH}"
+                fi
+            fi
+        fi
+    fi
+done < "$CONFIG_FILE"
+
+# ── Deploy ─────────────────────────────────────────────────────────────────────
+if [ "$SHADOW" = "true" ]; then
+    log "SHADOW: would run: cd ${REPO_PATH}/${COMPOSE_PATH%/*} && ${DEPLOY_COMMAND}"
+    emit_result "shadow" "skip" "shadow mode"
+else
+    log "Deploying: cd ${REPO_PATH}/${COMPOSE_PATH%/*} && ${DEPLOY_COMMAND}"
+    cd "${REPO_PATH}/${COMPOSE_PATH%/*}"
+    OUTPUT=$(eval "$DEPLOY_COMMAND" 2>&1) || die "Deploy command failed: ${OUTPUT}"
+
+    # Save the last 50 lines for reporting
+    OUTPUT_TAIL=$(echo "$OUTPUT" | tail -50 | tr '\n' ' ')
+fi
+
+# ── Health check ──────────────────────────────────────────────────────────────
+if [ -n "$HEALTH_CHECK" ] && [ "$SHADOW" != "true" ]; then
+    log "Running health check: ${HEALTH_CHECK} (timeout: ${HEALTH_TIMEOUT}s)"
+    if timeout "$HEALTH_TIMEOUT" bash -c "$HEALTH_CHECK" >/dev/null 2>&1; then
+        log "Health check PASSED"
+        emit_result "success" "pass" ""
+    else
+        log "Health check FAILED"
+        if [ "$ROLLBACK_ALLOWED" = "true" ]; then
+            log "Rollback allowed — attempting rollback to ${PREV_REVISION}"
+            if [ -n "$PREV_REVISION" ]; then
+                git checkout "$PREV_REVISION" 2>/dev/null
+                cd "${REPO_PATH}/${COMPOSE_PATH%/*}"
+                eval "$DEPLOY_COMMAND" 2>&1 || true
+                log "Rolled back to ${PREV_REVISION}"
+                emit_result "failure" "fail" "health check failed, rolled back to ${PREV_REVISION}"
+            else
+                emit_result "failure" "fail" "health check failed, no previous revision to rollback to"
+            fi
+        else
+            emit_result "failure" "fail" "health check failed, rollback not allowed"
+        fi
+        exit 1
+    fi
+elif [ "$SHADOW" = "true" ]; then
+    emit_result "shadow" "skip" "shadow mode"
+else
+    emit_result "success" "skip" "no health check configured"
+fi
+
+# ── Record successful revision ────────────────────────────────────────────────
+echo "$REVISION" > "${HEARTBEAT_DIR}/${SERVICE}.last-rev"
+
+log "Deployment complete"

@@ -1,0 +1,4 @@
+HOST=192.168.x.5
+BUILD=true
+SOURCE_PATH=/opt/opc
+GITEA_REPO=your-gitea-user/opc

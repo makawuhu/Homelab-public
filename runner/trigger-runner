@@ -1,0 +1,30 @@
+# deploy-runner trigger — called by coordinator on CT 103
+# Usage: trigger-runner <host> <service> [revision]
+# Signals a host-local runner via SSH + systemd
+
+set -euo pipefail
+
+HOST="${1:?Usage: trigger-runner <host> <service> [revision]}"
+SERVICE="${2:?Usage: trigger-runner <host> <service> [revision]}"
+REVISION="${3:-}"
+
+SSH_OPTS="-o ConnectTimeout=10 -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519"
+
+# If a specific revision is provided, write it to the runner config before triggering
+if [ -n "$REVISION" ]; then
+    ssh $SSH_OPTS "root@${HOST}" "sed -i 's/^revision:.*/revision: ${REVISION}/' /etc/deploy-runner/${SERVICE}.yaml" 2>/dev/null || true
+fi
+
+# Trigger the runner (fire and check — don't poll)
+ssh $SSH_OPTS "root@${HOST}" "systemctl start deploy-runner@${SERVICE}" 2>&1
+
+# Brief wait for the oneshot to complete
+sleep 10
+
+# Get the result
+RESULT_FILE=$(ssh $SSH_OPTS "root@${HOST}" "ls -t /var/log/deploy-runner/${SERVICE}-*.json 2>/dev/null | head -1" 2>/dev/null || echo "")
+if [ -n "$RESULT_FILE" ]; then
+    ssh $SSH_OPTS "root@${HOST}" "cat $RESULT_FILE" 2>/dev/null
+else
+    echo '{"service":"'"${SERVICE}"'","host":"'"${HOST}"'","status":"unknown","error":"no result file found"}'
+fi

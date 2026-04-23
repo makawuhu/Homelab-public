@@ -1,0 +1,21 @@
+[Unit]
+Description=Deploy runner for %i
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/deploy-runner %i
+StandardOutput=journal
+StandardError=journal
+
+# Security — host-local only, no network listeners
+NoNewPrivileges=no
+ProtectSystem=no
+ProtectHome=no
+
+# Timeout — if deploy takes more than 5 minutes, something is wrong
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target

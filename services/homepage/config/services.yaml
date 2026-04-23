@@ -1,0 +1,90 @@
+- Media:
+    - Jellyfin:
+        icon: jellyfin.png
+        href: https://jellyfin.yourdomain.com
+        description: Media server
+        widget:
+          type: jellyfin
+          url: https://jellyfin.yourdomain.com
+          key: "{{HOMEPAGE_VAR_JELLYFIN_API_KEY}}"
+          enableBlocks: true
+          enableNowPlaying: true
+
+    - Immich:
+        icon: immich.png
+        href: https://immich.yourdomain.com
+        description: Photo & video backup
+
+- AI:
+
+    - Open WebUI:
+        icon: openai.png
+        href: https://openwebui.yourdomain.com
+        description: LLM chat interface
+
+    - Ollama:
+        icon: ollama.png
+        href: http://ollama.yourdomain.com
+        description: Local LLM API
+
+    - Stable Diffusion:
+        icon: automatic1111.png
+        href: http://stable.yourdomain.com
+        description: Image generation
+
+    - Homelab Assistant:
+        icon: mdi-robot
+        href: https://assistant.yourdomain.com
+        description: AI GitOps assistant
+
+- Infrastructure:
+    - Portainer:
+        icon: portainer.png
+        href: https://portainer.yourdomain.com
+        description: Docker management
+        widget:
+          type: portainer
+          url: https://portainer.yourdomain.com
+          env: 3
+          key: "{{HOMEPAGE_VAR_PORTAINER_API_KEY}}"
+
+    - Gitea:
+        icon: gitea.png
+        href: https://gitea.yourdomain.com
+        description: Git server
+
+    - Uptime Kuma:
+        icon: uptime-kuma.png
+        href: https://status.yourdomain.com
+        description: Uptime monitoring
+        widget:
+          type: uptimekuma
+          url: https://status.yourdomain.com
+          slug: homelab
+
+    - Filebrowser:
+        icon: filebrowser.png
+        href: http://filebrowser.yourdomain.com
+        description: File management
+
+    - APEX:
+        icon: oracle.png
+        href: https://apex.yourdomain.com
+        description: Oracle APEX + DB 23ai
+
+    - CoolerControl:
+        icon: mdi-fan
+        href: https://coolercontrol.yourdomain.com
+        description: Fan and cooling control
+
+- Monitoring:
+    - Beszel:
+        icon: beszel.png
+        href: https://beszel.yourdomain.com
+        description: Server and container monitoring
+
+- Security:
+    - Wazuh:
+        icon: wazuh.png
+        href: https://wazuh.yourdomain.com
+        description: SIEM and XDR

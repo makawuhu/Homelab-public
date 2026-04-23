@@ -1,0 +1,7 @@
+creation_rules:
+  - path_regex: services/.*/\.env\.sops$
+    age: >-
+      age1YOUR_PRIMARY_AGE_PUBLIC_KEY,age1YOUR_SECONDARY_AGE_PUBLIC_KEY
+  - path_regex: secrets/.*\.sops$
+    age: >-
+      age1YOUR_PRIMARY_AGE_PUBLIC_KEY,age1YOUR_SECONDARY_AGE_PUBLIC_KEY

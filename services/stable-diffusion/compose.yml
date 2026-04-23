@@ -1,0 +1,23 @@
+services:
+  stable-diffusion:
+    image: sd-auto:local
+    container_name: stable-diffusion
+    ports:
+      - "7860:7860"
+    volumes:
+      - /opt/stable-diffusion/data:/data
+      - /opt/stable-diffusion/output:/output
+    environment:
+      - CLI_ARGS=
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"

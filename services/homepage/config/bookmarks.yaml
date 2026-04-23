@@ -1,0 +1,10 @@
+- Admin:
+    - OPNsense:
+        - href: https://192.168.x.1
+          icon: opnsense.png
+    - Proxmox:
+        - href: https://192.168.x.4:8006
+          icon: proxmox.png
+    - NPM:
+        - href: http://192.168.x.31:81
+          icon: nginx-proxy-manager.png
