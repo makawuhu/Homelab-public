@@ -1,0 +1,6 @@
+deployable: false
+managed_by: manual
+secrets: none
+healthcheck: https://tao.yourdomain.com
+risk_level: low
+notes: "CT 133 (192.168.x.169); OpenClaw homelab info bot; Khris-managed, read-only access to homelab repo for Q&A"

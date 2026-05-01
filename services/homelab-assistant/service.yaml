@@ -1,0 +1,5 @@
+deployable: false
+managed_by: manual
+secrets: env
+risk_level: low
+notes: "Placeholder directory; contains a local .env but no compose or deploy wiring; purpose unclear"

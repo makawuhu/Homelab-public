@@ -1,0 +1,9 @@
+services:
+  nature-forge-ui:
+    build: .
+    container_name: nature-forge-ui
+    ports:
+      - "8056:8056"
+    env_file:
+      - .env
+    restart: unless-stopped

@@ -1,0 +1,8 @@
+deployable: true
+managed_by: homelab
+compose_path: compose.yml
+secrets: none
+healthcheck: https://dozzle.yourdomain.com
+risk_level: low
+data_paths: []
+notes: "Read-only docker.sock access; no persistent data; container log viewer only"

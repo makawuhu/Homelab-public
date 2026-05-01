@@ -1,0 +1,141 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Renovate config for your-gitea-user/homelab \u2014 self-hosted GitOps lab",
+  "platform": "gitea",
+  "endpoint": "http://192.168.x.48:3010",
+  "repositories": [
+    "your-gitea-user/homelab"
+  ],
+  "onboarding": false,
+  "requireConfig": "optional",
+  "gitAuthor": "Renovate Bot <renovate-bot@yourdomain.com>",
+  "timezone": "America/Los_Angeles",
+  "schedule": [
+    "every weekend"
+  ],
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "branchConcurrentLimit": 8,
+  "labels": [
+    "renovate",
+    "dependencies"
+  ],
+  "assignees": [
+    "your-gitea-user"
+  ],
+  "enabledManagers": [
+    "docker-compose"
+  ],
+  "docker-compose": {
+    "fileMatch": [
+      "(^|/)compose\\.yml$"
+    ]
+  },
+  "packageRules": [
+    {
+      "description": "Wazuh \u2014 SIEM, manual upgrades only. No PRs, no noise.",
+      "matchPackageNames": [
+        "wazuh/wazuh-manager",
+        "wazuh/wazuh-indexer",
+        "wazuh/wazuh-dashboard"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Local builds \u2014 not registry images, cannot track.",
+      "matchPackageNames": [
+        "sd-auto",
+        "apex-ords"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Rolling/branch tags \u2014 upstream intentionally moves these.",
+      "matchPackageNames": [
+        "ghcr.io/immich-app/immich-server",
+        "ghcr.io/immich-app/immich-machine-learning",
+        "ghcr.io/open-webui/open-webui"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Watchtower \u2014 removed, do not track.",
+      "matchPackageNames": [
+        "containrrr/watchtower"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Filebrowser \u2014 uses v-prefixed tags (v2.x not 2.x).",
+      "matchPackageNames": [
+        "filebrowser/filebrowser"
+      ],
+      "versioning": "regex:^v?(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)"
+    },
+    {
+      "description": "Patch updates \u2014 auto-merge. Low risk.",
+      "matchUpdateTypes": [
+        "patch"
+      ],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash",
+      "addLabels": [
+        "automerge"
+      ]
+    },
+    {
+      "description": "Minor updates \u2014 open PR, manual review and merge.",
+      "matchUpdateTypes": [
+        "minor"
+      ],
+      "automerge": false,
+      "addLabels": [
+        "minor-update"
+      ]
+    },
+    {
+      "description": "Major updates \u2014 open PR, manual review required.",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "automerge": false,
+      "addLabels": [
+        "major-update",
+        "review-required"
+      ]
+    },
+    {
+      "description": "Monitoring stack \u2014 group so Prometheus + exporters move together.",
+      "matchPackageNames": [
+        "prom/prometheus",
+        "prom/node-exporter",
+        "gcr.io/cadvisor/cadvisor"
+      ],
+      "groupName": "monitoring-stack",
+      "automerge": false,
+      "addLabels": [
+        "monitoring"
+      ]
+    },
+    {
+      "description": "Gitea stack \u2014 Gitea + Postgres must move together (schema migrations).",
+      "matchPackageNames": [
+        "gitea/gitea",
+        "postgres"
+      ],
+      "groupName": "gitea-stack",
+      "automerge": false,
+      "addLabels": [
+        "gitea",
+        "review-required"
+      ]
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": [
+      "security"
+    ]
+  }
+}

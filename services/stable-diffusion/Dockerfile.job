@@ -1,0 +1,22 @@
+FROM pytorch/pytorch:2.3.0-cuda12.1-cudnn8-runtime
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 libglib2.0-0 \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir \
+    "diffusers>=0.30.0" \
+    "transformers>=4.44.0,<5.0.0" \
+    "accelerate>=0.33.0" \
+    "safetensors>=0.4.3" \
+    omegaconf==2.3.0
+
+WORKDIR /app
+COPY generate.py .
+
+ENTRYPOINT ["python", "generate.py"]

@@ -1,0 +1,24 @@
+services:
+  webhook-prod:
+    image: almir/webhook
+    container_name: webhook-prod
+    user: root
+    security_opt:
+      - apparmor=unconfined
+    ports:
+      - "9000:9000"
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - ./hooks.yaml:/etc/webhook/hooks.yaml:ro
+      - ./scripts:/scripts:ro
+      - /opt/homelab:/opt/homelab
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /root/.gitconfig:/root/.gitconfig:ro
+      - /root/.ssh:/root/.ssh:ro
+      - /root/.age:/root/.age:ro
+      - /usr/local/bin/sops:/usr/local/bin/sops:ro
+    entrypoint: ["/scripts/entrypoint.sh"]
+    command: ["-hooks=/etc/webhook/hooks.yaml", "-verbose"]
+    restart: unless-stopped

@@ -1,0 +1,40 @@
+services:
+  options-market-data:
+    build: /opt/opc/options-market-data
+    container_name: opc-market-data
+    environment:
+      - PORT=8001
+      - RISK_FREE_RATE=${RISK_FREE_RATE:-0.045}
+    networks:
+      - options-net
+    restart: unless-stopped
+
+  options-backend:
+    build: /opt/opc/options-backend
+    container_name: opc-backend
+    ports:
+      - "8010:8000"
+    environment:
+      - MARKET_DATA_URL=http://options-market-data:8001
+      - RISK_FREE_RATE=${RISK_FREE_RATE:-0.045}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+    volumes:
+      - /opt/opc-data/backend:/app/data
+    depends_on:
+      - options-market-data
+    networks:
+      - options-net
+    restart: unless-stopped
+
+  options-frontend:
+    build: /opt/opc/options-frontend
+    container_name: opc-frontend
+    ports:
+      - "5173:80"
+    networks:
+      - options-net
+    restart: unless-stopped
+
+networks:
+  options-net:
+    driver: bridge

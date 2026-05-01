@@ -1,0 +1,8 @@
+deployable: true
+managed_by: homelab
+compose_path: compose.yml
+secrets: sops
+healthcheck: https://homepage.yourdomain.com
+risk_level: low
+data_paths: []
+notes: "Config in-repo at services/homepage/config; API keys for Jellyfin, Portainer, Uptime Kuma via .env.sops"

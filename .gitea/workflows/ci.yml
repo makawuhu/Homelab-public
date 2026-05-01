@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  lint:
+    runs-on: [linux-x64]
+    name: Conventional commits
+    steps:
+      - name: Clone repo
+        run: |
+          git clone --depth=50 --branch ${{ github.head_ref }} \
+            http://your-gitea-user:${{ secrets.CI_TOKEN }}@192.168.x.48:3010/your-gitea-user/homelab.git repo
+          cd repo
+          git remote set-url origin \
+            http://your-gitea-user:${{ secrets.CI_TOKEN }}@192.168.x.48:3010/your-gitea-user/homelab.git
+          git fetch origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
+
+      - name: Validate conventional commits
+        run: |
+          cd repo
+          BASE="origin/${{ github.base_ref }}"
+          commits=$(git log ${BASE}..HEAD --pretty=format:"%H %s" 2>/dev/null)
+          if [ -z "$commits" ]; then
+            echo "OK: No new commits to check"
+            exit 0
+          fi
+          failed=0
+          while IFS= read -r line; do
+            hash=$(echo "$line" | cut -d' ' -f1)
+            msg=$(echo "$line" | cut -d' ' -f2-)
+            if echo "$msg" | grep -qE '^Merge '; then continue; fi
+            if ! echo "$msg" | grep -qE '^(feat|fix|docs|refactor|chore|test|perf)(\(.+\))?:'; then
+              echo "FAIL: $hash — $msg"
+              failed=1
+            fi
+          done <<< "$commits"
+          if [ "$failed" -eq 0 ]; then
+            echo "OK: All commits follow conventional commits format"
+          else
+            exit 1
+          fi
+
+  validate:
+    runs-on: [linux-x64]
+    name: Inventory & docs validation
+    steps:
+      - name: Clone repo
+        run: |
+          git clone --depth=50 --branch ${{ github.head_ref }} \
+            http://your-gitea-user:${{ secrets.CI_TOKEN }}@192.168.x.48:3010/your-gitea-user/homelab.git repo
+
+      - name: Install dependencies
+        run: |
+          pip3 install --quiet --break-system-packages -r repo/scripts/requirements.txt
+
+      - name: Python syntax check
+        run: |
+          python3 -m py_compile repo/scripts/validate_inventory.py
+          python3 -m py_compile repo/scripts/gen_docs.py
+          echo "OK: Python scripts compile cleanly"
+
+      - name: Validate inventory and docs
+        run: |
+          cd repo
+          python3 scripts/validate_inventory.py

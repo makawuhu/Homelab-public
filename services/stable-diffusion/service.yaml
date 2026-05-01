@@ -1,0 +1,10 @@
+deployable: true
+managed_by: homelab
+compose_path: compose.yml
+secrets: env
+healthcheck: http://stable.yourdomain.com
+risk_level: medium
+data_paths:
+  - /opt/stable-diffusion/data
+  - /opt/stable-diffusion/output
+notes: "A1111 Stable Diffusion on VM 134 (RTX A2000); local build image sd-auto:local; .env is plaintext — should be SOPS-encrypted"

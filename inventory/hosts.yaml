@@ -1,0 +1,50 @@
+---
+# Deploy-target host inventory — the 7 hosts referenced by services/.deploy files.
+# Scope: deploy targets only. CT-resident services (anri, khris, max, tao) are
+# documented in their service directories and are not deploy targets.
+# All keys must be unique; services.yaml host fields reference these keys.
+# ssh_user defaults to root when absent.
+
+portainer-vm:
+  ip: "192.168.x.5"
+  type: vm
+  proxmox_id: 101
+  description: "Primary Docker host, VM 101 (no GPU — RTX A2000 on ai)"
+
+claude-ops:
+  ip: "192.168.x.8"
+  type: lxc
+  proxmox_id: 102
+  description: "GitOps operator CT 102 — webhook and Renovate"
+
+wazuh:
+  ip: "192.168.x.47"
+  type: lxc
+  proxmox_id: 122
+  description: "Wazuh SIEM/XDR, CT 122"
+
+gitea:
+  ip: "192.168.x.48"
+  type: lxc
+  proxmox_id: 123
+  description: "Gitea + Postgres, CT 123"
+
+gpu:
+  ip: "192.168.x.167"
+  type: vm
+  proxmox_id: 131
+  ssh_user: khris
+  description: "GPU compute node, VM 131"
+
+studio:
+  ip: "192.168.x.168"
+  type: lxc
+  proxmox_id: 132
+  description: "Stable Diffusion studio, CT 132"
+
+ai:
+  ip: "192.168.x.170"
+  type: vm
+  proxmox_id: 134
+  ssh_user: khris
+  description: "AI inference VM, RTX A2000 12GB, VM 134"

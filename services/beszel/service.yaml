@@ -1,0 +1,9 @@
+deployable: true
+managed_by: homelab
+compose_path: compose.yml
+secrets: none
+healthcheck: https://beszel.yourdomain.com
+risk_level: low
+data_paths:
+  - /opt/beszel/hub_data
+notes: "Monitoring hub on VM 101; deploy.sh also pushes beszel-agent to CT 102, CT 123, CT 125"

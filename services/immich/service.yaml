@@ -1,0 +1,9 @@
+deployable: true
+managed_by: homelab
+compose_path: compose.yml
+secrets: env
+healthcheck: https://immich.yourdomain.com
+risk_level: high
+data_paths:
+  - /mnt/media/immich/upload
+notes: "Photo library on 4TB HDD; DB credentials in plaintext .env (not SOPS); irreplaceable user data — destructive ops are manual-only"

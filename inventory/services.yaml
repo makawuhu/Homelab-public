@@ -1,0 +1,138 @@
+---
+# Canonical service inventory — all 29 git-tracked directories under services/.
+#
+# category values:
+#   compose_managed  has compose.yml + .deploy; deployed via GitOps deploy.sh
+#   special          has .deploy but no compose.yml (ai VM ownership marker)
+#   ct_resident      dedicated LXC/VM managed outside GitOps; no .deploy
+#   doc_only         documentation stub only; no deployable artifact
+#
+# host (required for compose_managed and special): key from hosts.yaml
+# build: true when .deploy carries BUILD=true (source-build required before deploy)
+
+ai:
+  category: special
+  host: ai
+  notes: ".deploy present but no compose.yml — the VM itself is the unit, not a compose stack"
+
+anri:
+  category: ct_resident
+  notes: "CT 129 (192.168.x.165) — Khris's personal agent, Telegram-connected"
+
+ash:
+  category: ct_resident
+  notes: "CT 136 (192.168.x.172) — Hermes Agent; plays Pokemon Blue via PyBoy emulation; no GitOps authority"
+
+autoforge-ui:
+  category: compose_managed
+  host: portainer-vm
+
+beszel:
+  category: compose_managed
+  host: portainer-vm
+
+claude-ops:
+  category: ct_resident
+  notes: "CT 102 (192.168.x.8) — GitOps controller node; auth-proxy sub-service runs here; webhook is inventoried separately"
+
+coolercontrol:
+  category: compose_managed
+  host: portainer-vm
+
+dozzle:
+  category: compose_managed
+  host: portainer-vm
+
+filebrowser:
+  category: compose_managed
+  host: portainer-vm
+
+gitea:
+  category: compose_managed
+  host: gitea
+
+gpu:
+  category: compose_managed
+  host: gpu
+  notes: "Non-root SSH user (khris) and custom compose filename set in .deploy"
+
+homelab-assistant:
+  category: doc_only
+  notes: "Placeholder directory with a local .env; no compose or .deploy wiring present"
+
+homepage:
+  category: compose_managed
+  host: portainer-vm
+
+honcho:
+  category: compose_managed
+  host: portainer-vm
+  build: true
+  notes: "Built from source (plastic-labs/honcho on GitHub)"
+
+immich:
+  category: compose_managed
+  host: portainer-vm
+
+jellyfin:
+  category: compose_managed
+  host: portainer-vm
+
+khris:
+  category: ct_resident
+  notes: "CT 103 (192.168.x.163) — Hermes Agent bot, Telegram-connected"
+
+max:
+  category: ct_resident
+  notes: "CT 135 (192.168.x.171) — OpenCode/ChatGPT agent"
+
+nature-forge-ui:
+  category: compose_managed
+  host: portainer-vm
+
+ollama:
+  category: compose_managed
+  host: portainer-vm
+
+ollama-gpu:
+  category: compose_managed
+  host: ai
+  notes: "GPU-accelerated Ollama on VM 134 (RTX A2000); separate stack from CPU ollama on VM 101"
+
+opc:
+  category: compose_managed
+  host: portainer-vm
+  build: true
+  notes: "Built from Gitea source (your-gitea-user/opc)"
+
+portainer:
+  category: compose_managed
+  host: portainer-vm
+
+renovate:
+  category: compose_managed
+  host: claude-ops
+
+stable-diffusion:
+  category: compose_managed
+  host: ai
+
+studio:
+  category: compose_managed
+  host: studio
+
+tao:
+  category: ct_resident
+  notes: "CT 133 (192.168.x.169) — homelab info operator"
+
+uptime-kuma:
+  category: compose_managed
+  host: portainer-vm
+
+wazuh:
+  category: compose_managed
+  host: wazuh
+
+webhook:
+  category: compose_managed
+  host: claude-ops

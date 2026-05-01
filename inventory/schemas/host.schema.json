@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Host",
+  "description": "A deploy-target host entry in inventory/hosts.yaml",
+  "type": "object",
+  "required": ["ip", "type", "description"],
+  "properties": {
+    "ip": {
+      "type": "string",
+      "pattern": "^(\\d{1,3}\\.){3}\\d{1,3}$",
+      "description": "IPv4 address"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["vm", "lxc"],
+      "description": "Proxmox container type"
+    },
+    "proxmox_id": {
+      "type": "integer",
+      "minimum": 100,
+      "description": "Proxmox VM/CT ID"
+    },
+    "ssh_user": {
+      "type": "string",
+      "description": "SSH login user; root is assumed when absent"
+    },
+    "description": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

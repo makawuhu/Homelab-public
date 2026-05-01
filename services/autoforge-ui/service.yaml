@@ -1,0 +1,10 @@
+deployable: true
+managed_by: homelab
+compose_path: compose.yml
+secrets: env
+display_name: "AutoForge UI"
+healthcheck: https://autoforge.yourdomain.com
+risk_level: medium
+data_paths:
+  - /mnt/media/claude/hueforge
+notes: "3MF slicer UI + RunPod/vast.ai GPU integration on VM 101; RUNPOD_API_KEY in plaintext .env — consider SOPS"

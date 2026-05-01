@@ -1,0 +1,10 @@
+deployable: true
+managed_by: homelab
+compose_path: compose.yml
+secrets: none
+healthcheck: https://jellyfin.yourdomain.com
+risk_level: high
+data_paths:
+  - /mnt/media/jellyfin/config
+  - /mnt/media/jellyfin/cache
+notes: "Media library on 4TB HDD at /mnt/media; Jellyfin DB encryption key stored in Portainer env — treat config volume as data-bearing"

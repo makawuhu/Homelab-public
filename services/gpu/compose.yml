@@ -1,0 +1,87 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: gpu-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  api:
+    image: python:3.14-slim
+    container_name: gpu-api
+    ports:
+      - "8080:8080"
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - NVIDIA_VISIBLE_DEVICES=all
+    depends_on:
+      - redis
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - ./api:/app
+      - /opt/models:/opt/models:ro
+    working_dir: /app
+    command: bash -c "pip install --no-cache-dir fastapi[all] uvicorn redis && python -m uvicorn main:app --host 0.0.0.0 --port 8080"
+
+  worker:
+    image: gpu-worker:latest
+    container_name: gpu-worker
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - NVIDIA_VISIBLE_DEVICES=all
+    depends_on:
+      - redis
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - ./api/worker.py:/app/worker.py:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  file-server:
+    image: python:3.14-slim
+    container_name: gpu-file-server
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./file-server-upload.py:/app/server.py:ro
+      - /opt/outputs:/output
+      - /opt/nature-forge-dev/output:/output/nature-forge-dev:ro
+    working_dir: /app
+    command: python server.py
+    restart: unless-stopped
+
+  nature-forge-dev:
+    image: nature-forge-worker:local
+    container_name: nature-forge-dev
+    profiles: [dev]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - /opt/nature-forge-dev:/workspace
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    restart: "no"
+
+volumes:
+  redis-data:

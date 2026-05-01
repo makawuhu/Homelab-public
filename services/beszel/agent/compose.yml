@@ -1,0 +1,17 @@
+services:
+  beszel-agent:
+    image: henrygd/beszel-agent:latest
+    container_name: beszel-agent
+    restart: unless-stopped
+    ports:
+      - "991:991"
+    environment:
+      - PORT=991
+      - KEY=ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGwToK66mJCHd5XGsuLPVmtY2vF5Hg94Fr6Rs+m1iJ4S
+    security_opt:
+      - apparmor:unconfined
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host/root:ro

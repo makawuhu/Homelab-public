@@ -1,0 +1,24 @@
+- resources:
+    cpu: true
+    memory: true
+    disk: /
+    label: VM 101
+
+- datetime:
+    text_size: xl
+    format:
+      timeStyle: short
+      dateStyle: short
+      hour12: true
+
+- search:
+    provider: google
+    target: _blank
+
+- openmeteo:
+    label: Local
+    latitude: 37.7749
+    longitude: -122.4194
+    timezone: America/Los_Angeles
+    units: imperial
+    cache: 5

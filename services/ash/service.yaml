@@ -1,0 +1,10 @@
+deployable: false
+managed_by: manual
+secrets: none
+healthcheck: https://ash.yourdomain.com
+risk_level: low
+data_paths:
+  - /root/roms/pokemon-blue.gb
+  - /root/.hermes/
+  - /opt/pokemon-agent/
+notes: "CT 136 (192.168.x.172); Hermes Agent v0.11.0 on Telegram; plays Pokemon Blue via PyBoy emulation; no GitOps authority"

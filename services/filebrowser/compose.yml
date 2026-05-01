@@ -1,0 +1,15 @@
+services:
+  filebrowser:
+    image: filebrowser/filebrowser:v2.63.2
+    container_name: filebrowser
+    ports:
+      - "8085:80"
+    volumes:
+      - /mnt/media:/srv/media:shared
+      - filebrowser-db:/database
+    environment:
+      - TZ=America/Los_Angeles
+    restart: unless-stopped
+
+volumes:
+  filebrowser-db:

@@ -1,0 +1,8 @@
+deployable: true
+managed_by: homelab
+compose_path: compose.yml
+secrets: none
+healthcheck: https://studio.yourdomain.com
+risk_level: low
+data_paths: []
+notes: "Stable Diffusion UI on CT 132 (192.168.x.168); Khris-managed; local build image studio:local; no persistent volumes"

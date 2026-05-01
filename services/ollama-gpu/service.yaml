@@ -1,0 +1,9 @@
+deployable: true
+managed_by: homelab
+compose_path: compose.yml
+secrets: none
+healthcheck: null
+risk_level: medium
+data_paths:
+  - /opt/ollama
+notes: "Ollama on VM 134 (RTX A2000); internal-only, no public proxy; separate instance from VM 101 ollama"

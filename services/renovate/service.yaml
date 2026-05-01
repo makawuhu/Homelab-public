@@ -1,0 +1,8 @@
+deployable: true
+managed_by: homelab
+compose_path: compose.yml
+secrets: sops
+healthcheck: null
+risk_level: low
+data_paths: []
+notes: "One-shot job on CT 102 (no restart policy); triggered via cron/run.sh; Gitea PAT and Renovate token in .env.sops"

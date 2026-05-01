@@ -1,0 +1,4 @@
+HOST=192.168.x.167
+SSH_USER=khris
+REPO=/opt/gpu-compute
+COMPOSE_FILE=docker-compose.yml

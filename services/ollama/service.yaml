@@ -1,0 +1,9 @@
+deployable: true
+managed_by: homelab
+compose_path: compose.yml
+secrets: sops
+healthcheck: http://ollama.yourdomain.com
+risk_level: medium
+data_paths:
+  - /mnt/media/ollama
+notes: "Ollama LLM inference on VM 101; identity key pair injected from .env.sops at container startup"

@@ -1,0 +1,11 @@
+deployable: true
+managed_by: homelab
+compose_path: compose.yml
+secrets: env
+healthcheck: null
+risk_level: high
+data_paths:
+  - /opt/homelab
+  - /root/.ssh
+  - /root/.age
+notes: "Critical GitOps infrastructure on CT 102 (this node); mounts docker.sock, SSH keys, and age key at runtime; breaking this disables all GitOps deploys"

@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Per-service metadata",
+  "description": "services/<name>/service.yaml — operational metadata for a single service",
+  "type": "object",
+  "required": ["deployable", "managed_by", "secrets", "risk_level"],
+  "properties": {
+    "deployable": {
+      "type": "boolean",
+      "description": "true if this service is deployed via GitOps (.deploy + compose.yml)"
+    },
+    "managed_by": {
+      "type": "string",
+      "enum": ["homelab", "external", "manual", "deprecated"],
+      "description": "homelab: GitOps-managed; external: source built from external repo; manual: provisioned by hand; deprecated: no longer active"
+    },
+    "build": {
+      "type": "boolean",
+      "description": "Source clone/build required before Docker build (external repo dependency)"
+    },
+    "compose_path": {
+      "type": "string",
+      "description": "Relative path to compose file; required when deployable: true"
+    },
+    "secrets": {
+      "type": "string",
+      "enum": ["none", "env", "sops"],
+      "description": "none: no secrets; env: plaintext .env at runtime; sops: .env.sops encrypted at rest"
+    },
+    "healthcheck": {
+      "type": ["string", "null"],
+      "description": "Public URL for health verification, or null if not publicly reachable"
+    },
+    "risk_level": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "manual-only"],
+      "description": "low: stateless/recoverable; medium: stateful but restorable; high: data-bearing or critical infra; manual-only: never auto-deploy"
+    },
+    "data_paths": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Host-side paths with persistent data (volumes that survive container restart)"
+    },
+    "display_name": {
+      "type": "string",
+      "description": "Human-readable display name for README tables; only needed when the service key formats poorly"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

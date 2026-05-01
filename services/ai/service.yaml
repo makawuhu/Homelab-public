@@ -1,0 +1,5 @@
+deployable: false
+managed_by: manual
+secrets: none
+risk_level: manual-only
+notes: "VM 134 (192.168.x.170); 8 vCPU, 32 GB RAM, RTX A2000 12GB via PCIe passthrough; hosts stable-diffusion service; provisioned via Proxmox cloud-init"

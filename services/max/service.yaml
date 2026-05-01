@@ -1,0 +1,5 @@
+deployable: false
+managed_by: manual
+secrets: none
+risk_level: low
+notes: "CT 135 (192.168.x.171); OpenCode agent (ChatGPT/GPT-5), CLI-only; Khris-managed, Gitea write access to max and nature-forge repos"

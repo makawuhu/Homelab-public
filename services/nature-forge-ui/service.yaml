@@ -1,0 +1,9 @@
+deployable: true
+managed_by: homelab
+compose_path: compose.yml
+secrets: env
+display_name: "Nature-Forge UI"
+healthcheck: https://nature-forge.yourdomain.com
+risk_level: low
+data_paths: []
+notes: "Built from local Dockerfile; image baked (no bind mount); GPU jobs dispatched to VM 131 via gpu-compute API; requires --no-cache docker build when requirements.txt changes"

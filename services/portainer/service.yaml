@@ -1,0 +1,8 @@
+deployable: true
+managed_by: homelab
+compose_path: compose.yml
+secrets: none
+healthcheck: https://portainer.yourdomain.com
+risk_level: high
+data_paths: []
+notes: "Docker management UI on VM 101; state in named volume portainer_data; manages most service stacks via agent"

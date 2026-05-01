@@ -1,0 +1,9 @@
+deployable: true
+managed_by: homelab
+compose_path: compose.yml
+secrets: env
+healthcheck: https://wazuh.yourdomain.com
+risk_level: high
+data_paths:
+  - /opt/wazuh/config
+notes: "SIEM/XDR on CT 122; manager + indexer + dashboard stack; SSL certs at /opt/wazuh/config; .env is plaintext — should be SOPS-encrypted"

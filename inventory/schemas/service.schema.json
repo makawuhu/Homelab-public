@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Service",
+  "description": "A service entry in inventory/services.yaml",
+  "type": "object",
+  "required": ["category"],
+  "properties": {
+    "category": {
+      "type": "string",
+      "enum": ["compose_managed", "special", "ct_resident", "doc_only"],
+      "description": "compose_managed: compose.yml + .deploy; special: .deploy without compose.yml; ct_resident: dedicated LXC/VM, no GitOps deploy; doc_only: stub only"
+    },
+    "host": {
+      "type": "string",
+      "description": "Key into hosts.yaml; required for compose_managed and special"
+    },
+    "build": {
+      "type": "boolean",
+      "description": "Source build required before deploy (BUILD=true in .deploy)"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

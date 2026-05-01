@@ -1,0 +1,78 @@
+services:
+  honcho-api:
+    image: honcho:local
+    build:
+      context: /opt/honcho
+    container_name: honcho-api
+    command: sh -c "/app/.venv/bin/python scripts/provision_db.py && fastapi run --host 0.0.0.0 src/main.py"
+    depends_on:
+      honcho-db:
+        condition: service_healthy
+      honcho-redis:
+        condition: service_healthy
+    ports:
+      - "8050:8000"
+    environment:
+      - DB_CONNECTION_URI=postgresql+psycopg://honcho:honcho@honcho-db:5432/honcho
+      - CACHE_URL=redis://honcho-redis:6379/0?suppress=true
+      - LLM_ANTHROPIC_API_KEY=${LLM_ANTHROPIC_API_KEY}
+      - LLM_OPENAI_API_KEY=${LLM_OPENAI_API_KEY}
+    volumes:
+      - /opt/homelab/services/honcho/config.toml:/app/config.toml:ro
+    restart: unless-stopped
+
+  honcho-deriver:
+    image: honcho:local
+    container_name: honcho-deriver
+    command: ["/app/.venv/bin/python", "-m", "src.deriver"]
+    depends_on:
+      honcho-db:
+        condition: service_healthy
+      honcho-redis:
+        condition: service_healthy
+    environment:
+      - DB_CONNECTION_URI=postgresql+psycopg://honcho:honcho@honcho-db:5432/honcho
+      - CACHE_URL=redis://honcho-redis:6379/0?suppress=true
+      - LLM_ANTHROPIC_API_KEY=${LLM_ANTHROPIC_API_KEY}
+      - LLM_OPENAI_API_KEY=${LLM_OPENAI_API_KEY}
+      - METRICS_ENABLED=false
+    volumes:
+      - /opt/homelab/services/honcho/config.toml:/app/config.toml:ro
+    healthcheck:
+      disable: true
+    restart: unless-stopped
+
+  honcho-db:
+    image: pgvector/pgvector:pg15
+    container_name: honcho-db
+    restart: unless-stopped
+    command: ["postgres", "-c", "max_connections=200"]
+    environment:
+      - POSTGRES_DB=honcho
+      - POSTGRES_USER=honcho
+      - POSTGRES_PASSWORD=honcho
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - /opt/honcho/database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - honcho-pgdata:/var/lib/postgresql/data/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U honcho -d honcho"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  honcho-redis:
+    image: redis:8.6
+    container_name: honcho-redis
+    restart: unless-stopped
+    volumes:
+      - honcho-redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  honcho-pgdata:
+  honcho-redis-data:

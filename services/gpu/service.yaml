@@ -1,0 +1,11 @@
+deployable: true
+managed_by: homelab
+compose_path: compose.yml
+secrets: none
+display_name: "GPU API"
+healthcheck: https://gpu.yourdomain.com
+risk_level: medium
+data_paths:
+  - /opt/models
+  - /opt/outputs
+notes: "GPU compute API on VM 131 (RTX 4070 Super); .deploy uses SSH_USER=khris and REPO=/opt/gpu-compute — compose runs from that path, not from the homelab repo checkout"

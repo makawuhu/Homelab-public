@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nature-Forge</title>
+<style>
+:root {
+  --bg:      #0f1117;
+  --surface: #1a1d27;
+  --border:  #2e3245;
+  --accent:  #4f8ef7;
+  --success: #4caf80;
+  --danger:  #e05c5c;
+  --warn:    #e0a030;
+  --text:    #d4d8f0;
+  --muted:   #6b7099;
+  --radius:  6px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+}
+
+header {
+  padding: 13px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.header-left { display: flex; align-items: center; gap: 10px; }
+.logo { font-size: 20px; }
+header h1 { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+.subtitle { color: var(--muted); font-size: 12px; margin-left: 2px; }
+
+.gpu-chip {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 5px 12px; font-size: 12px;
+  color: var(--muted); white-space: nowrap;
+}
+.gpu-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--muted); flex-shrink: 0;
+}
+.gpu-dot.ok   { background: var(--success); }
+.gpu-dot.warn { background: var(--warn); }
+.gpu-dot.err  { background: var(--danger); }
+
+main { max-width: 1060px; margin: 0 auto; padding: 24px; }
+
+.layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 18px;
+  align-items: start;
+}
+@media (max-width: 720px) { .layout { grid-template-columns: 1fr; } }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+.card:last-child { margin-bottom: 0; }
+.card-title {
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.07em;
+  color: var(--muted); margin-bottom: 12px;
+}
+
+/* Upload */
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  cursor: pointer;
+  transition: border-color 0.15s;
+  min-height: 260px;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+.upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); }
+.upload-prompt { text-align: center; padding: 28px; color: var(--muted); pointer-events: none; }
+.upload-prompt svg { margin-bottom: 10px; opacity: 0.5; }
+.upload-prompt p { font-size: 13px; }
+.upload-prompt small { font-size: 11px; display: block; margin-top: 4px; opacity: 0.7; }
+#imagePreview {
+  width: 100%; max-height: 300px;
+  object-fit: contain; padding: 8px;
+  display: none;
+}
+.upload-filename {
+  font-size: 11px; color: var(--muted);
+  text-align: center; margin-top: 6px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Form */
+.field { margin-bottom: 11px; }
+.field:last-child { margin-bottom: 0; }
+.field label {
+  display: block; font-size: 12px;
+  color: var(--muted); margin-bottom: 4px;
+}
+input[type=number], select {
+  width: 100%;
+  background: var(--bg); border: 1px solid var(--border);
+  color: var(--text); border-radius: var(--radius);
+  padding: 6px 10px; font-size: 13px;
+  -moz-appearance: textfield;
+}
+input[type=number]::-webkit-inner-spin-button { opacity: 0.4; }
+input[type=number]:focus, select:focus { outline: none; border-color: var(--accent); }
+input.invalid { border-color: var(--danger) !important; }
+input[type=range] {
+  width: 100%; accent-color: var(--accent);
+  height: 4px; cursor: pointer;
+}
+.exposure-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 4px;
+}
+.exposure-value {
+  font-size: 12px; font-weight: 600; font-family: monospace;
+  color: var(--accent); min-width: 38px; text-align: right;
+}
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.hint {
+  font-size: 11px; color: var(--accent);
+  margin-top: 4px; line-height: 1.4;
+}
+.hint.warn { color: var(--warn); }
+
+.total-display {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 9px 13px;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 11px;
+}
+.total-display .td-label { font-size: 12px; color: var(--muted); }
+.total-display .td-value { font-size: 16px; font-weight: 600; }
+
+.btn {
+  padding: 8px 16px; border: none; border-radius: var(--radius);
+  cursor: pointer; font-size: 13px; font-weight: 500;
+  transition: opacity 0.15s;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover:not(:disabled) { opacity: 0.88; }
+.btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-full { width: 100%; padding: 10px; font-size: 14px; margin-top: 4px; }
+
+/* Job status */
+#jobStatus { margin-top: 20px; }
+.status-header {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+}
+.status-badge {
+  padding: 3px 10px; border-radius: 12px;
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.status-badge.queued    { background: rgba(107,112,153,0.2); color: var(--muted); }
+.status-badge.running   { background: rgba(79,142,247,0.2);  color: var(--accent); }
+.status-badge.completed { background: rgba(76,175,128,0.2);  color: var(--success); }
+.status-badge.failed    { background: rgba(224,92,92,0.2);   color: var(--danger); }
+.status-badge.cancelled { background: rgba(224,160,48,0.2);  color: var(--warn); }
+
+.job-id-label { font-size: 11px; color: var(--muted); font-family: monospace; }
+
+.log-box {
+  background: #080b10; border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 11px 14px;
+  font-family: monospace; font-size: 12px; color: #8fa0c0;
+  white-space: pre-wrap; word-break: break-all;
+  max-height: 220px; overflow-y: auto;
+  margin-bottom: 14px;
+}
+
+.artifacts-grid { display: grid; gap: 14px; }
+
+.artifact-preview img, #previewImg {
+  width: 100%; max-width: 100%; border-radius: var(--radius);
+  border: 1px solid var(--border); display: block;
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px; margin-bottom: 12px;
+}
+.meta-cell {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 8px 10px;
+}
+.meta-cell .mk { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.meta-cell .mv { font-size: 14px; font-weight: 600; margin-top: 2px; }
+
+.dl-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.dl-link {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 12px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text);
+  text-decoration: none; font-size: 12px;
+  transition: border-color 0.15s, color 0.15s;
+}
+.dl-link:hover { border-color: var(--accent); color: var(--accent); }
+
+.spinner {
+  display: inline-block; width: 13px; height: 13px;
+  border: 2px solid rgba(79,142,247,0.25);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <span class="logo">⬡</span>
+    <h1>Nature-Forge</h1>
+    <span class="subtitle">Heightmap to STL</span>
+  </div>
+  <div class="gpu-chip" id="gpuChip">
+    <span class="gpu-dot" id="gpuDot"></span>
+    <span id="gpuLabel">connecting…</span>
+  </div>
+</header>
+
+<main>
+  <div class="layout">
+
+    <!-- Left column: image upload -->
+    <div>
+      <div class="card" style="padding:0; overflow:hidden;">
+        <div class="upload-zone" id="uploadZone">
+          <input type="file" id="imageInput" accept="image/*" hidden>
+          <div class="upload-prompt" id="uploadPrompt">
+            <svg width="38" height="38" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+            </svg>
+            <p>Drop image or click to upload</p>
+            <small>PNG · JPG · WEBP</small>
+          </div>
+          <img id="imagePreview" alt="Preview">
+        </div>
+      </div>
+      <div class="upload-filename" id="uploadFilename"></div>
+    </div>
+
+    <!-- Right column: parameters -->
+    <div>
+
+      <!-- Filament Pack -->
+      <div class="card">
+        <div class="card-title">Filament Pack</div>
+        <div class="field">
+          <select id="preset"></select>
+        </div>
+      </div>
+
+      <!-- Image Adjustment -->
+      <div class="card">
+        <div class="card-title">Image Adjustment</div>
+        <div class="field">
+          <div class="exposure-row">
+            <label style="margin:0;">Exposure</label>
+            <span class="exposure-value" id="exposureValue">0.0</span>
+          </div>
+          <input type="range" id="exposure" min="-1.0" max="1.0" step="0.1" value="0">
+          <div class="hint" id="exposureHint">No adjustment</div>
+        </div>
+        <div class="field">
+          <div class="exposure-row">
+            <label style="margin:0;">Midtone Lift</label>
+            <span class="exposure-value" id="midtoneLiftValue">0.0</span>
+          </div>
+          <input type="range" id="midtoneLift" min="-1.0" max="1.0" step="0.1" value="0">
+          <div class="hint" id="midtoneHint">No adjustment — lifts mids, preserves blacks &amp; whites</div>
+        </div>
+      </div>
+
+      <!-- Print Geometry -->
+      <div class="card">
+        <div class="card-title">Print Geometry</div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Layer Height (mm)</label>
+            <input type="number" id="layerHeight" value="0.08" step="0.04" min="0.04" max="0.28">
+          </div>
+          <div class="field">
+            <label>Base Layer Height (mm)</label>
+            <input type="number" id="baseLayerHeight" value="0.16" step="0.04" min="0.04" max="0.6">
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Base Thickness (mm)</label>
+          <input type="number" id="baseThickness" value="0.64" step="0.04" min="0.04">
+          <div class="hint" id="baseHint"></div>
+        </div>
+
+        <div class="field">
+          <label>Max Mesh Height (mm)</label>
+          <input type="number" id="maxMeshHeight" value="1.76" step="0.08" min="0.08">
+          <div class="hint" id="meshHint"></div>
+        </div>
+
+        <div class="total-display">
+          <span class="td-label">Max Total Height</span>
+          <span class="td-value" id="totalHeight">—</span>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Print Width (mm)</label>
+            <input type="number" id="printWidth" value="150" step="5" min="10" max="500">
+          </div>
+          <div class="field">
+            <label>Nozzle (mm)</label>
+            <select id="detailSize">
+              <option value="0.2" selected>0.2</option>
+              <option value="0.4">0.4</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Optimization -->
+      <div class="card">
+        <div class="card-title">Optimization</div>
+        <div class="field-row">
+          <div class="field">
+            <label>Max Swaps</label>
+            <input type="number" id="maxSwaps" value="8" step="1" min="1" max="50">
+          </div>
+          <div class="field">
+            <label>Max Colors</label>
+            <input type="number" id="maxColors" value="4" step="1" min="1" max="16">
+          </div>
+        </div>
+        <div class="field">
+          <label>Iterations <span style="color:var(--muted);font-weight:400;">(quality vs. speed)</span></label>
+          <input type="number" id="iterations" value="1000" step="500" min="100" max="10000">
+        </div>
+        <div class="field" style="margin-top:10px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="noPruning" style="width:auto;accent-color:var(--accent);">
+            <span>Disable pruning <span style="color:var(--muted);font-weight:400;">(keep all optimizer colors)</span></span>
+          </label>
+          <div class="hint warn" id="noPruningHint" style="display:none;">Swap count may exceed AMS limit — check instructions before printing</div>
+        </div>
+      </div>
+
+      <!-- 3MF Export Settings -->
+      <div class="card">
+        <div class="card-title">3MF Export</div>
+        <div class="field">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <span style="font-size:12px;color:var(--muted);">Mesh Simplification</span>
+            <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;font-weight:400;cursor:pointer;">
+              <input type="checkbox" id="enableSimplify" style="width:auto;accent-color:var(--accent);">
+              <span style="color:var(--muted);">Enable</span>
+            </label>
+          </div>
+          <select id="simplifyFaces" disabled style="opacity:0.4;">
+            <option value="500000">500k faces</option>
+            <option value="250000">250k faces</option>
+            <option value="100000">100k faces</option>
+          </select>
+          <div class="hint">Reduces file size; may soften fine detail</div>
+        </div>
+      </div>
+
+      <button id="submitBtn" class="btn btn-primary btn-full" disabled>
+        Submit Job
+      </button>
+
+    </div>
+  </div>
+
+  <!-- Job status (shown after submit) -->
+  <div id="jobStatus" class="card" style="display:none; margin-top:20px;">
+
+    <div class="status-header">
+      <span class="spinner" id="statusSpinner" style="display:none;"></span>
+      <span class="status-badge queued" id="statusBadge">queued</span>
+      <span class="job-id-label" id="jobIdLabel"></span>
+    </div>
+
+    <div id="logSection" style="display:none;">
+      <div class="card-title" style="margin-bottom:8px;">Log</div>
+      <div class="log-box" id="logBox"></div>
+    </div>
+
+    <div id="artifactsSection" style="display:none;">
+      <div class="card-title" style="margin-bottom:12px;">Artifacts</div>
+      <div class="artifacts-grid">
+        <div id="previewWrap" style="display:none;">
+          <img id="previewImg" alt="Model preview">
+        </div>
+        <div id="metaSection" style="display:none;">
+          <div class="meta-grid" id="metaGrid"></div>
+        </div>
+        <div class="dl-links" id="dlLinks"></div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let imageFile      = null;
+let currentJobId   = null;
+let currentJobUuid = null;
+let outputUrl      = null;
+let pollTimer      = null;
+
+// ── GPU Health ─────────────────────────────────────────────────────────────
+async function refreshGpu() {
+  const dot   = document.getElementById('gpuDot');
+  const label = document.getElementById('gpuLabel');
+  try {
+    const r = await fetch('/api/health');
+    const d = await r.json();
+    if (d.gpu) {
+      const g = d.gpu;
+      dot.className = 'gpu-dot ' + (g.gpu_util_pct > 90 ? 'warn' : 'ok');
+      label.textContent =
+        `${g.name} · ${Math.round(g.memory_used_mb)}/${Math.round(g.memory_total_mb)} MB` +
+        ` · ${g.gpu_util_pct}% · ${g.temperature_c}°C`;
+    } else {
+      dot.className = 'gpu-dot warn';
+      label.textContent = 'GPU unavailable';
+    }
+  } catch {
+    dot.className = 'gpu-dot err';
+    label.textContent = 'GPU offline';
+  }
+}
+refreshGpu();
+setInterval(refreshGpu, 30000);
+
+// ── Filament packs ─────────────────────────────────────────────────────────
+async function loadPacks() {
+  const sel = document.getElementById('preset');
+  try {
+    const d = await (await fetch('/api/packs')).json();
+    d.packs.forEach(p => {
+      const o = document.createElement('option');
+      o.value = p.name;
+      o.textContent = p.label;
+      if (p.name === 'polymaker-photo-bw') o.selected = true;
+      sel.appendChild(o);
+    });
+  } catch {
+    const o = document.createElement('option');
+    o.textContent = 'Failed to load packs';
+    sel.appendChild(o);
+  }
+}
+loadPacks();
+
+// ── Image upload ───────────────────────────────────────────────────────────
+const uploadZone  = document.getElementById('uploadZone');
+const imageInput  = document.getElementById('imageInput');
+const imgPreview  = document.getElementById('imagePreview');
+const uploadPrompt = document.getElementById('uploadPrompt');
+
+uploadZone.addEventListener('click', () => imageInput.click());
+
+uploadZone.addEventListener('dragover', e => {
+  e.preventDefault();
+  uploadZone.classList.add('drag-over');
+});
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f) setImage(f);
+});
+imageInput.addEventListener('change', () => {
+  if (imageInput.files[0]) setImage(imageInput.files[0]);
+});
+
+function setImage(file) {
+  imageFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    imgPreview.src = e.target.result;
+    imgPreview.style.display = 'block';
+    uploadPrompt.style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+  document.getElementById('uploadFilename').textContent = file.name;
+  updateSubmit();
+}
+
+// ── Live height calculations ───────────────────────────────────────────────
+function r4(n) { return Math.round(n * 10000) / 10000; }
+
+function recalc() {
+  const lh  = parseFloat(document.getElementById('layerHeight').value)    || 0.08;
+  const blh = parseFloat(document.getElementById('baseLayerHeight').value) || 0.16;
+  const bt  = parseFloat(document.getElementById('baseThickness').value)   || 0.48;
+  const mh  = parseFloat(document.getElementById('maxMeshHeight').value)   || 1.76;
+
+  // Base thickness
+  const baseEl   = document.getElementById('baseThickness');
+  const baseHint = document.getElementById('baseHint');
+  if (bt < blh) {
+    baseEl.classList.add('invalid');
+    baseHint.className = 'hint warn';
+    baseHint.textContent = `⚠ Must be ≥ base layer height (${blh}mm)`;
+  } else {
+    baseEl.classList.remove('invalid');
+    const n       = Math.round((bt - blh) / lh);
+    const nearest = r4(blh + n * lh);
+    const totalL  = Math.round(bt / lh);
+    if (Math.abs(bt - nearest) > 0.0005) {
+      baseHint.className = 'hint warn';
+      baseHint.textContent = `⚠ Nearest valid: ${nearest}mm = ${blh} + ${n}×${lh} (${totalL} layers)`;
+    } else {
+      baseHint.className = 'hint';
+      baseHint.textContent = `= ${blh}mm + ${n}×${lh}mm (${totalL} layers total)`;
+    }
+  }
+
+  // Mesh height
+  const meshHint  = document.getElementById('meshHint');
+  const blendL    = Math.round(mh / lh);
+  const nearestMh = r4(blendL * lh);
+  if (Math.abs(mh - nearestMh) > 0.0005) {
+    meshHint.className = 'hint warn';
+    meshHint.textContent = `⚠ Nearest valid: ${nearestMh}mm (${blendL} layers)`;
+  } else {
+    meshHint.className = 'hint';
+    meshHint.textContent = `= ${blendL} layers`;
+  }
+
+  // Total
+  document.getElementById('totalHeight').textContent = `${r4(bt + mh)}mm`;
+}
+
+['layerHeight','baseLayerHeight','baseThickness','maxMeshHeight'].forEach(id =>
+  document.getElementById(id).addEventListener('input', recalc)
+);
+recalc();
+
+// ── Exposure slider ────────────────────────────────────────────────────────
+document.getElementById('exposure').addEventListener('input', function() {
+  const v = parseFloat(this.value);
+  const label = document.getElementById('exposureValue');
+  const hint  = document.getElementById('exposureHint');
+  label.textContent = (v >= 0 ? '+' : '') + v.toFixed(1);
+  if (v === 0)       { hint.className = 'hint';      hint.textContent = 'No adjustment'; }
+  else if (v > 0)    { hint.className = 'hint';      hint.textContent = `Global brighten (gamma ${(2**-v).toFixed(2)})`; }
+  else               { hint.className = 'hint warn'; hint.textContent = `Global darken (gamma ${(2**-v).toFixed(2)})`; }
+});
+
+document.getElementById('noPruning').addEventListener('change', function() {
+  document.getElementById('noPruningHint').style.display = this.checked ? 'block' : 'none';
+});
+
+document.getElementById('enableSimplify').addEventListener('change', function() {
+  const sel = document.getElementById('simplifyFaces');
+  sel.disabled = !this.checked;
+  sel.style.opacity = this.checked ? '1' : '0.4';
+});
+
+document.getElementById('midtoneLift').addEventListener('input', function() {
+  const v = parseFloat(this.value);
+  const label = document.getElementById('midtoneLiftValue');
+  const hint  = document.getElementById('midtoneHint');
+  label.textContent = (v >= 0 ? '+' : '') + v.toFixed(1);
+  if (v === 0)    { hint.className = 'hint';      hint.textContent = 'No adjustment — lifts mids, preserves blacks & whites'; }
+  else if (v > 0) { hint.className = 'hint';      hint.textContent = `Lifting midtones +${Math.round(v * 80)}pts at grey, blacks/whites preserved`; }
+  else            { hint.className = 'hint warn'; hint.textContent = `Sinking midtones ${Math.round(v * 80)}pts at grey, blacks/whites preserved`; }
+});
+
+// ── Submit state ───────────────────────────────────────────────────────────
+function updateSubmit() {
+  document.getElementById('submitBtn').disabled = !imageFile;
+}
+
+// ── Job submission ─────────────────────────────────────────────────────────
+document.getElementById('submitBtn').addEventListener('click', async () => {
+  if (!imageFile) return;
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
+
+  const fd = new FormData();
+  fd.append('image',             imageFile);
+  fd.append('preset',            document.getElementById('preset').value);
+  fd.append('layer_height',      document.getElementById('layerHeight').value);
+  fd.append('base_layer_height', document.getElementById('baseLayerHeight').value);
+  fd.append('base_thickness',    document.getElementById('baseThickness').value);
+  fd.append('max_mesh_height',   document.getElementById('maxMeshHeight').value);
+  fd.append('print_width',       document.getElementById('printWidth').value);
+  fd.append('detail_size',       document.getElementById('detailSize').value);
+  fd.append('max_swaps',         document.getElementById('maxSwaps').value);
+  fd.append('max_colors',        document.getElementById('maxColors').value);
+  fd.append('iterations',        document.getElementById('iterations').value);
+  fd.append('exposure',          document.getElementById('exposure').value);
+  fd.append('midtone_lift',      document.getElementById('midtoneLift').value);
+  fd.append('no_pruning',        document.getElementById('noPruning').checked);
+
+  try {
+    const r = await fetch('/api/jobs', { method: 'POST', body: fd });
+    if (!r.ok) { const t = await r.text(); throw new Error(t); }
+    const d = await r.json();
+
+    currentJobId   = d.job_id;
+    currentJobUuid = d.job_uuid;
+    outputUrl      = d.output_url;
+
+    showStatus('queued', d.job_id);
+    startPoll();
+
+    btn.textContent = 'Submit Job';
+  } catch (e) {
+    alert('Submission failed: ' + e.message);
+    btn.disabled    = false;
+    btn.textContent = 'Submit Job';
+  }
+});
+
+// ── Status display ─────────────────────────────────────────────────────────
+function showStatus(status, jobId) {
+  document.getElementById('jobStatus').style.display = 'block';
+  document.getElementById('jobIdLabel').textContent  = jobId;
+  setbadge(status);
+}
+
+function setbadge(status) {
+  const badge   = document.getElementById('statusBadge');
+  const spinner = document.getElementById('statusSpinner');
+  badge.className   = `status-badge ${status}`;
+  badge.textContent = status;
+  spinner.style.display = (status === 'queued' || status === 'running') ? 'inline-block' : 'none';
+}
+
+// ── Polling ────────────────────────────────────────────────────────────────
+function startPoll() {
+  clearInterval(pollTimer);
+  pollTimer = setInterval(poll, 3000);
+  poll();
+}
+
+async function poll() {
+  if (!currentJobId) return;
+  try {
+    const d = await (await fetch(`/api/jobs/${currentJobId}`)).json();
+    setbadge(d.status);
+
+    if (d.status === 'completed' || d.status === 'failed' || d.status === 'cancelled') {
+      clearInterval(pollTimer);
+      pollTimer = null;
+      document.getElementById('submitBtn').disabled = false;
+      if (d.result) await showResult(d.result, d.status);
+    }
+  } catch (e) {
+    console.warn('poll error', e);
+  }
+}
+
+// ── Results ────────────────────────────────────────────────────────────────
+async function showResult(result, status) {
+  document.getElementById('logSection').style.display = 'block';
+  const box = document.getElementById('logBox');
+  box.textContent = 'Loading logs…';
+
+  let logText = null;
+  if (outputUrl) {
+    try {
+      const r = await fetch(`${outputUrl}/result.json`);
+      if (r.ok) {
+        const nf = await r.json();
+        logText = nf.stdout_tail || '';
+        if (nf.stderr_tail) {
+          const lines = nf.stderr_tail.trim().split('\n').filter(l => l.trim());
+          const last  = lines[lines.length - 1];
+          if (last) logText += '\n\n' + last;
+        }
+      }
+    } catch {}
+  }
+  if (!logText) {
+    logText = (result.stdout || '') + (result.stderr ? '\n--- stderr ---\n' + result.stderr : '');
+  }
+  box.textContent = logText || '(no output)';
+  box.scrollTop   = box.scrollHeight;
+
+  if (status !== 'completed') return;
+
+  document.getElementById('artifactsSection').style.display = 'block';
+
+  // Preview image
+  const pimg = document.getElementById('previewImg');
+  pimg.onload  = () => { document.getElementById('previewWrap').style.display = 'block'; };
+  pimg.onerror = () => { document.getElementById('previewWrap').style.display = 'none'; };
+  pimg.src = `${outputUrl}/final_model.png`;
+
+  // Download links
+  const links = document.getElementById('dlLinks');
+  links.innerHTML = '';
+  [
+    { href: `${outputUrl}/final_model.stl`,        label: 'Download STL' },
+    { href: `${outputUrl}/swap_instructions.txt`,  label: 'Swap Instructions' },
+    { href: `${outputUrl}/metadata.txt`,           label: 'Metadata' },
+  ].forEach(({ href, label }) => {
+    const a = document.createElement('a');
+    a.href      = href;
+    a.target    = '_blank';
+    a.className = 'dl-link';
+    a.innerHTML = `<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>${label}`;
+    links.appendChild(a);
+  });
+
+  // Export to 3MF button (async — starts background job, polls, then downloads)
+  if (currentJobUuid) {
+    const exportBtn = document.createElement('button');
+    exportBtn.className   = 'dl-link';
+    exportBtn.style.cssText = 'border-color:var(--accent);color:var(--accent);font-weight:600;cursor:pointer;background:none;';
+    exportBtn.innerHTML   = `<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>Export to 3MF`;
+    links.appendChild(exportBtn);
+
+    exportBtn.addEventListener('click', async () => {
+      const nozzle        = document.getElementById('detailSize').value || '0.4';
+      const layerHeight   = document.getElementById('layerHeight').value || '0.08';
+      const simplifyFaces = document.getElementById('enableSimplify').checked
+        ? (document.getElementById('simplifyFaces').value || '0')
+        : '0';
+      exportBtn.disabled  = true;
+      exportBtn.innerHTML = `<span class="spinner"></span> Building 3MF…`;
+
+      try {
+        // Start the export
+        const startR = await fetch(
+          `/api/export-3mf/${currentJobUuid}?nozzle=${nozzle}&layer_height=${layerHeight}&simplify_faces=${simplifyFaces}`,
+          { method: 'POST' }
+        );
+        if (!startR.ok) throw new Error(await startR.text());
+        const { export_id } = await startR.json();
+
+        // Poll until done
+        while (true) {
+          await new Promise(r => setTimeout(r, 3000));
+          const statusR = await fetch(`/api/export-3mf/status/${export_id}`);
+          const st      = await statusR.json();
+          if (st.status === 'done') break;
+          if (st.status === 'failed') throw new Error(st.error || 'Export failed');
+        }
+
+        // Trigger download
+        const a = document.createElement('a');
+        a.href = `/api/export-3mf/download/${export_id}`;
+        a.click();
+
+        exportBtn.disabled  = false;
+        exportBtn.innerHTML = `<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>Export to 3MF`;
+      } catch (e) {
+        exportBtn.disabled  = false;
+        exportBtn.innerHTML = `<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>Export to 3MF`;
+        alert('Export failed: ' + e.message);
+      }
+    });
+  }
+
+  // Metadata tiles
+  fetch(`${outputUrl}/metadata.txt`)
+    .then(r => r.text())
+    .then(txt => {
+      const LABELS = {
+        colors: 'Colors', swaps: 'Swaps', max_layers: 'Layers',
+        layer_height: 'Layer H', base_layers: 'Base Layers',
+        base_thickness: 'Base', total_height_mm: 'Total H',
+        detail_size: 'Detail',
+      };
+      const grid = document.getElementById('metaGrid');
+      grid.innerHTML = '';
+      txt.split('\n').forEach(line => {
+        const [k, v] = line.split('=');
+        if (!k || v === undefined) return;
+        const cell = document.createElement('div');
+        cell.className = 'meta-cell';
+        cell.innerHTML = `<div class="mk">${LABELS[k.trim()] || k.trim()}</div><div class="mv">${v.trim()}</div>`;
+        grid.appendChild(cell);
+      });
+      if (grid.children.length) document.getElementById('metaSection').style.display = 'block';
+    })
+    .catch(() => {});
+}
+</script>
+</body>
+</html>

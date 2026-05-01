@@ -1,0 +1,6 @@
+deployable: false
+managed_by: manual
+secrets: none
+healthcheck: https://anri.yourdomain.com
+risk_level: low
+notes: "CT 129 (192.168.x.165); OpenClaw personal agent for creative/trading/research workflows; Khris-managed, no infra access"

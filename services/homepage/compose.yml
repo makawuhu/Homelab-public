@@ -1,0 +1,18 @@
+services:
+  homepage:
+    image: ghcr.io/gethomepage/homepage:v1.12.3
+    container_name: homepage
+    ports:
+      - "3005:3000"
+    volumes:
+      - /opt/homelab/services/homepage/config:/app/config
+    environment:
+      - TZ=America/Los_Angeles
+      - HOMEPAGE_ALLOWED_HOSTS=homepage.yourdomain.com
+      - HOMEPAGE_VAR_JELLYFIN_API_KEY=${JELLYFIN_API_KEY}
+      - HOMEPAGE_VAR_PORTAINER_API_KEY=${PORTAINER_API_KEY}
+      - HOMEPAGE_VAR_UPTIME_KUMA_USER=${UPTIME_KUMA_USER}
+      - HOMEPAGE_VAR_UPTIME_KUMA_PASS=${UPTIME_KUMA_PASS}
+      - HOMEPAGE_VAR_GRAFANA_USER=${GRAFANA_USER}
+      - HOMEPAGE_VAR_GRAFANA_PASS=${GRAFANA_PASS}
+    restart: unless-stopped

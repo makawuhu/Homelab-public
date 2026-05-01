@@ -1,0 +1,9 @@
+deployable: true
+managed_by: homelab
+compose_path: compose.yml
+secrets: none
+healthcheck: null
+risk_level: low
+data_paths:
+  - /mnt/media/coolercontrol-config
+notes: "Privileged container for fan/cooling control on VM 101; internal-only on port 11987, no public proxy"

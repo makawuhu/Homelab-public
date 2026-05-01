@@ -1,0 +1,11 @@
+deployable: true
+managed_by: homelab
+build: true
+compose_path: compose.yml
+secrets: env
+display_name: "OPC"
+healthcheck: https://opc.yourdomain.com
+risk_level: medium
+data_paths:
+  - /opt/opc-data/backend
+notes: "Options trading platform on VM 101; source built from your-gitea-user/opc Gitea repo at /opt/opc; ANTHROPIC_API_KEY in plaintext .env"

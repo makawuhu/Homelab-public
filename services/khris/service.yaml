@@ -1,0 +1,7 @@
+deployable: false
+managed_by: manual
+secrets: none
+healthcheck: null
+risk_level: low
+data_paths: []
+notes: "CT 103 (192.168.x.163); Hermes Agent v0.11.0 on Discord; provisioned manually via khris-provision scripts; no GitOps authority"

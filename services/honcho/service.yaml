@@ -1,0 +1,9 @@
+deployable: true
+managed_by: homelab
+build: true
+compose_path: compose.yml
+secrets: sops
+healthcheck: https://honcho.yourdomain.com
+risk_level: medium
+data_paths: []
+notes: "Builds from plastic-labs/honcho (GitHub) cloned to /opt/honcho on VM 101; pgvector + Redis in named volumes; Anthropic + OpenAI API keys via .env.sops"

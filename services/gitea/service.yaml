@@ -1,0 +1,8 @@
+deployable: true
+managed_by: homelab
+compose_path: compose.yml
+secrets: env
+healthcheck: https://gitea.yourdomain.com
+risk_level: high
+data_paths: []
+notes: "GitOps source of truth on CT 123 — loss is catastrophic; named volumes gitea-data + gitea-db-data; GITEA_DB_PASS in plaintext .env on CT 123 — should be SOPS-encrypted"

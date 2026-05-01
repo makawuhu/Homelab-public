@@ -1,0 +1,10 @@
+deployable: true
+managed_by: homelab
+compose_path: compose.yml
+secrets: none
+display_name: "FileBrowser"
+healthcheck: http://filebrowser.yourdomain.com
+risk_level: medium
+data_paths:
+  - /mnt/media
+notes: "Serves /mnt/media on VM 101 as uid=1000; 403 errors are OS-level permissions, not FileBrowser user config; BoltDB (not SQLite)"

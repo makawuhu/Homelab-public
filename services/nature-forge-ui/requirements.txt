@@ -1,0 +1,6 @@
+fastapi[all]
+uvicorn
+httpx
+Pillow
+trimesh
+fast-simplification

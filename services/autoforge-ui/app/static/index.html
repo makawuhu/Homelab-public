@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoForge → 3MF</title>
+<style>
+  :root {
+    --bg:      #0f1117;
+    --surface: #1a1d27;
+    --border:  #2e3245;
+    --accent:  #4f8ef7;
+    --danger:  #e05c5c;
+    --warn:    #e0a030;
+    --text:    #d4d8f0;
+    --muted:   #6b7099;
+    --radius:  6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; font-size: 14px; }
+  a { color: var(--accent); }
+
+  header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+  header h1 { font-size: 18px; font-weight: 600; }
+
+  .tabs { display: flex; border-bottom: 1px solid var(--border); padding: 0 24px; }
+  .tab { padding: 10px 18px; cursor: pointer; border-bottom: 2px solid transparent; color: var(--muted); font-size: 14px; }
+  .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+
+  .tab-panel { display: none; padding: 24px; max-width: 960px; margin: 0 auto; }
+  .tab-panel.active { display: block; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
+  .card-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 12px; }
+
+  .row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .row:last-child { margin-bottom: 0; }
+  label { color: var(--muted); font-size: 12px; white-space: nowrap; }
+
+  input[type=text], input[type=number], select {
+    background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    border-radius: var(--radius); padding: 6px 10px; font-size: 13px;
+  }
+  input[type=text]:focus, input[type=number]:focus, select:focus { outline: none; border-color: var(--accent); }
+  input[type=color] { width: 36px; height: 28px; padding: 2px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); cursor: pointer; }
+
+  .btn { padding: 7px 16px; border: none; border-radius: var(--radius); cursor: pointer; font-size: 13px; font-weight: 500; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-secondary { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
+  .btn-secondary:hover { border-color: var(--accent); }
+  .btn-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 4px 10px; font-size: 12px; }
+  .btn-danger:hover { background: var(--danger); color: #fff; }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+  .toggle-group { display: flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .toggle-group button { background: var(--bg); border: none; color: var(--muted); padding: 6px 16px; cursor: pointer; font-size: 13px; }
+  .toggle-group button.active { background: var(--accent); color: #fff; }
+
+  .radio-group { display: flex; gap: 12px; flex-wrap: wrap; }
+  .radio-opt { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .radio-opt input { accent-color: var(--accent); }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+
+  .swatch { width: 20px; height: 20px; border-radius: 4px; display: inline-block; border: 1px solid var(--border); flex-shrink: 0; }
+
+  .banner { border-radius: var(--radius); padding: 10px 14px; margin-bottom: 16px; font-size: 13px; line-height: 1.5; }
+  .banner-warn { background: rgba(224,160,48,0.12); border: 1px solid rgba(224,160,48,0.4); color: var(--warn); }
+  .banner-err  { background: rgba(224,92,92,0.12);  border: 1px solid rgba(224,92,92,0.4);  color: var(--danger); }
+  .banner-ok   { background: rgba(79,142,247,0.1);  border: 1px solid rgba(79,142,247,0.35); color: var(--accent); }
+
+  #log-box { background: #0a0c12; border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; font-family: monospace; font-size: 12px; height: 220px; overflow-y: auto; white-space: pre-wrap; color: #8fa0c0; }
+  #log-box .done  { color: #5dd88a; }
+  #log-box .error { color: var(--danger); }
+
+  .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .td-val { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+  /* modal */
+  .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; }
+  .modal-backdrop.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); width: 700px; max-width: 95vw; max-height: 80vh; display: flex; flex-direction: column; }
+  .modal-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .modal-header h3 { font-size: 15px; }
+  .modal-body { padding: 14px 18px; overflow-y: auto; flex: 1; }
+  .modal-footer { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+  input[type=search] { background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: var(--radius); padding: 6px 10px; font-size: 13px; width: 100%; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>AutoForge → 3MF</h1>
+</header>
+
+<div class="tabs">
+  <div class="tab active" data-tab="generate">Generate</div>
+  <div class="tab" data-tab="new-project">New Project</div>
+  <div class="tab" data-tab="library">My Library</div>
+</div>
+
+<!-- ═══════════════════ GENERATE TAB ═══════════════════ -->
+<div id="tab-generate" class="tab-panel active">
+
+  <div id="banner-area"></div>
+
+  <!-- Project -->
+  <div class="card">
+    <div class="card-title">Project</div>
+    <div class="row">
+      <select id="project-select" style="flex:1"><option value="">Select project...</option></select>
+      <button class="btn btn-primary" onclick="loadProject()">Load</button>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="card">
+    <div class="card-title">Settings</div>
+    <div class="row">
+      <label>Nozzle</label>
+      <div class="toggle-group">
+        <button id="nozzle-04" class="active" onclick="setNozzle(0.4)">0.4 mm</button>
+        <button id="nozzle-02" onclick="setNozzle(0.2)">0.2 mm</button>
+      </div>
+    </div>
+    <div class="row">
+      <label>Layer Height</label>
+      <div id="lh-radios" class="radio-group"></div>
+      <input type="number" id="lh-custom" step="0.01" min="0.01" max="0.5" placeholder="custom" style="width:90px"
+             oninput="onCustomLH(this.value)">
+    </div>
+    <div class="row">
+      <label>Background Height</label>
+      <input type="number" id="bg-height" step="0.01" min="0.1" style="width:90px"> mm
+      <span class="hint">min 0.56 mm recommended</span>
+    </div>
+    <div class="row">
+      <span id="lh-estimate" class="hint"></span>
+    </div>
+  </div>
+
+  <!-- Filament Slots -->
+  <div class="card">
+    <div class="card-title">Filament Slots</div>
+    <table>
+      <thead><tr><th>Slot</th><th>Filament</th><th>Color</th><th>TD</th><th>Type</th></tr></thead>
+      <tbody id="slot-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- Color Changes -->
+  <div class="card">
+    <div class="card-title">Color Changes</div>
+    <table>
+      <thead><tr><th>top_z (mm)</th><th>Slot</th><th>Color</th><th>Filament</th><th></th></tr></thead>
+      <tbody id="cc-tbody"></tbody>
+    </table>
+    <div style="margin-top:10px">
+      <button class="btn btn-secondary btn-sm" onclick="addColorChangeRow()">+ Add Row</button>
+    </div>
+  </div>
+
+  <!-- Generate -->
+  <button id="gen-btn" class="btn btn-primary" style="width:100%;padding:10px" onclick="runGenerate()" disabled>
+    Generate 3MF
+  </button>
+
+  <!-- Log -->
+  <div class="card" style="margin-top:16px">
+    <div class="card-title">Output Log</div>
+    <div id="log-box"></div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════ NEW PROJECT TAB ═══════════════════ -->
+<div id="tab-new-project" class="tab-panel">
+
+  <div id="np-banner-area"></div>
+
+  <!-- RunPod pod status -->
+  <div class="card">
+    <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+      <span>RunPod Pod</span>
+      <button class="btn btn-secondary btn-sm" onclick="refreshPodStatus()">Refresh</button>
+    </div>
+    <div class="row" style="margin-bottom:0">
+      <span id="pod-status-text" style="color:var(--muted);font-size:13px">Checking...</span>
+      <button id="pod-start-btn" class="btn btn-secondary btn-sm" onclick="setPodState('running')" style="display:none">Start Pod</button>
+      <button id="pod-stop-btn"  class="btn btn-secondary btn-sm" onclick="setPodState('stopped')"  style="display:none">Stop Pod</button>
+    </div>
+  </div>
+
+  <!-- Project setup -->
+  <div class="card">
+    <div class="card-title">Project</div>
+    <div class="row">
+      <label>Name</label>
+      <input type="text" id="np-name" placeholder="my-project" style="flex:1">
+    </div>
+    <div class="row">
+      <label>Image</label>
+      <input type="file" id="np-image" accept="image/*" style="flex:1;color:var(--text)">
+    </div>
+  </div>
+
+  <!-- AutoForge settings -->
+  <div class="card">
+    <div class="card-title">AutoForge Settings</div>
+    <div class="row">
+      <label>Backend</label>
+      <div class="toggle-group">
+        <button id="np-backend-runpod" class="active" onclick="setBackend('runpod')">RunPod (RTX 5090)</button>
+        <button id="np-backend-local" onclick="setBackend('local')">Local (A2000)</button>
+      </div>
+    </div>
+    <div class="row">
+      <label>Nozzle</label>
+      <div class="toggle-group">
+        <button id="np-nozzle-04" class="active" onclick="npSetNozzle(0.4)">0.4 mm</button>
+        <button id="np-nozzle-02" onclick="npSetNozzle(0.2)">0.2 mm</button>
+      </div>
+    </div>
+    <div class="row">
+      <label>Layer Height</label>
+      <div id="np-lh-radios" class="radio-group"></div>
+      <input type="number" id="np-lh-custom" step="0.01" min="0.01" max="0.5" placeholder="custom" style="width:90px"
+             oninput="npOnCustomLH(this.value)">
+    </div>
+    <div class="row">
+      <label>Base Layers</label>
+      <input type="number" id="np-base-layers" min="1" style="width:70px" oninput="npUpdateBaseMm()">
+      <span id="np-base-mm" style="color:var(--muted);font-size:13px;margin-left:8px"></span>
+    </div>
+    <div class="row">
+      <label>Max Layers</label>
+      <input type="number" id="np-max-layers" value="75" min="1" style="width:80px">
+      <label style="margin-left:16px">Max Swaps</label>
+      <input type="number" id="np-max-swaps" value="8" min="1" style="width:70px">
+      <label style="margin-left:16px">Max Colors</label>
+      <input type="number" id="np-max-colors" value="4" min="1" max="4" style="width:70px">
+    </div>
+  </div>
+
+  <!-- Filament source -->
+  <div class="card">
+    <div class="card-title">Filaments</div>
+    <div class="row">
+      <label class="radio-opt"><input type="radio" name="np-fil-src" value="auto" checked onchange="npFilSrcChange()"> Auto-select from photo pack</label>
+      <label class="radio-opt"><input type="radio" name="np-fil-src" value="library" onchange="npFilSrcChange()"> Pick from my library</label>
+    </div>
+    <div id="np-fil-picker" style="display:none;margin-top:10px">
+      <div class="hint" style="margin-bottom:8px">Select up to 4 filaments (slot order = AMS order):</div>
+      <div id="np-fil-rows"></div>
+      <button class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="npAddFilamentRow()">+ Add Filament</button>
+    </div>
+  </div>
+
+  <!-- Run -->
+  <button id="np-run-btn" class="btn btn-primary" style="width:100%;padding:10px" onclick="runNewProject()">
+    Run AutoForge
+  </button>
+
+  <!-- Log -->
+  <div class="card" style="margin-top:16px">
+    <div class="card-title">AutoForge Log</div>
+    <div id="np-log-box" style="background:#0a0c12;border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-family:monospace;font-size:12px;height:280px;overflow-y:auto;white-space:pre-wrap;color:#8fa0c0"></div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════ LIBRARY TAB ═══════════════════ -->
+<div id="tab-library" class="tab-panel">
+
+  <!-- Add filament -->
+  <div class="card">
+    <div class="card-title">Add Filament</div>
+    <div class="row">
+      <input type="text" id="lib-brand" placeholder="Brand" style="width:140px">
+      <input type="text" id="lib-name"  placeholder="Name"  style="width:160px">
+      <select id="lib-type" style="width:80px">
+        <option>PLA</option><option>PETG</option><option>ABS</option><option>ASA</option><option>TPU</option>
+      </select>
+      <input type="color" id="lib-color" value="#1c1c1c">
+      <input type="number" id="lib-td" step="0.1" min="0" placeholder="TD" style="width:70px">
+      <button class="btn btn-primary btn-sm" onclick="addToLibrary()">Add</button>
+    </div>
+  </div>
+
+  <!-- Library table -->
+  <div class="card">
+    <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+      <span>My Filaments</span>
+      <button class="btn btn-secondary btn-sm" onclick="openPackModal()">Browse Photo Pack</button>
+    </div>
+    <table>
+      <thead><tr><th>Color</th><th>Brand</th><th>Name</th><th>Type</th><th>TD</th><th></th></tr></thead>
+      <tbody id="lib-tbody"></tbody>
+    </table>
+    <div id="lib-empty" style="color:var(--muted);font-size:13px;padding:12px 0;display:none">
+      No filaments yet. Add one above or import from the Photo Pack.
+    </div>
+  </div>
+
+</div>
+
+<!-- Photo Pack Modal -->
+<div id="pack-modal" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Browse Photo Pack</h3>
+      <button class="btn btn-secondary btn-sm" onclick="closePackModal()">Close</button>
+    </div>
+    <div class="modal-body">
+      <input type="search" id="pack-search" placeholder="Search brand or name..." oninput="filterPack()">
+      <table>
+        <thead><tr><th></th><th>Color</th><th>Brand</th><th>Name</th><th>Type</th><th>TD</th><th>In Library</th></tr></thead>
+        <tbody id="pack-tbody"></tbody>
+      </table>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closePackModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="importSelected()">Add Selected to Library</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+let state = {
+  backend: 'runpod',
+  nozzle: 0.4,
+  layerHeight: '0.08',
+  suggestions: [],
+  filaments: [],   // from hfp
+  rawSwaps: [],    // color_changes from API, preserved for re-mapping
+  library: [],
+  packData: [],
+};
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+(async () => {
+  // Load projects
+  const projects = await fetch('/api/projects').then(r => r.json());
+  const sel = document.getElementById('project-select');
+  projects.forEach(p => {
+    const o = document.createElement('option');
+    o.value = o.textContent = p;
+    sel.appendChild(o);
+  });
+
+  // Load library
+  await refreshLibrary();
+
+  // Default slot table
+  renderSlotTable([]);
+})();
+
+// ── Tabs ─────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('tab-' + t.dataset.tab).classList.add('active');
+  });
+});
+
+// ── Project load ──────────────────────────────────────────────────────────────
+async function loadProject() {
+  const project = document.getElementById('project-select').value;
+  if (!project) return;
+
+  const data = await fetch(`/api/projects/${encodeURIComponent(project)}/load?nozzle=${state.nozzle}`)
+    .then(r => r.json());
+
+  state.filaments        = data.hfp?.filaments || [];
+  state.rawSwaps         = data.color_changes || [];
+  state.suggestions      = data.suggested_layer_heights || [];
+  state.layerHeight      = state.suggestions[1]?.value || state.suggestions[0]?.value || '0.08';
+
+  document.getElementById('bg-height').value = data.background_height || 0.56;
+
+  renderBanners(data);
+  renderLHRadios();
+  renderSlotTable(state.filaments);
+  renderColorChanges(state.rawSwaps);
+
+  document.getElementById('gen-btn').disabled =
+    !data.stl_found || !data.truck_ref_exists;
+}
+
+// ── Banners ───────────────────────────────────────────────────────────────────
+function renderBanners(data) {
+  const area = document.getElementById('banner-area');
+  area.innerHTML = '';
+
+  if (!data.stl_found) {
+    area.innerHTML += `<div class="banner banner-err">No STL found in project directory (expected pass2/final_model.stl or final_model.stl).</div>`;
+  }
+  if (!data.truck_ref_exists) {
+    area.innerHTML += `<div class="banner banner-err">Reference 3MF template not found. Check TRUCK_REF_PATH.</div>`;
+  }
+  if (data.unmatched_filaments?.length) {
+    const names = data.unmatched_filaments.map(f => `<strong>${f}</strong>`).join(', ');
+    area.innerHTML += `<div class="banner banner-warn">These filaments from swap_instructions.txt are not in your library: ${names}. Add them in the Library tab for best results.</div>`;
+  }
+}
+
+// ── Nozzle ────────────────────────────────────────────────────────────────────
+function setBackend(val) {
+  state.backend = val;
+  document.getElementById('np-backend-runpod').classList.toggle('active', val === 'runpod');
+  document.getElementById('np-backend-local').classList.toggle('active', val === 'local');
+}
+
+function setNozzle(val) {
+  state.nozzle = val;
+  document.getElementById('nozzle-04').classList.toggle('active', val === 0.4);
+  document.getElementById('nozzle-02').classList.toggle('active', val === 0.2);
+  // Re-suggest layer heights based on nozzle
+  state.suggestions = suggestLayerHeights(val);
+  renderLHRadios();
+}
+
+function suggestLayerHeights(nozzle) {
+  const results = [];
+  for (const lhStr of ['0.04', '0.08']) {
+    const lh = parseFloat(lhStr);
+    if (lh <= nozzle * 0.75) {
+      const layerCount = Math.round(6.0 / lh);
+      const estHours   = Math.round(layerCount * 0.4 / 60 * 1.4 * 10) / 10;
+      results.push({ value: lhStr, label: `${lhStr}mm (${lh === 0.04 ? 'fine' : 'standard'})`, layer_count: layerCount, est_hours: estHours });
+    }
+  }
+  return results;
+}
+
+// ── Layer height radios ───────────────────────────────────────────────────────
+function renderLHRadios() {
+  const container = document.getElementById('lh-radios');
+  container.innerHTML = '';
+  state.suggestions.forEach(s => {
+    const label = document.createElement('label');
+    label.className = 'radio-opt';
+    label.innerHTML = `<input type="radio" name="lh" value="${s.value}" ${s.value === state.layerHeight ? 'checked' : ''}> ${s.label}`;
+    label.querySelector('input').addEventListener('change', () => {
+      state.layerHeight = s.value;
+      document.getElementById('lh-custom').value = '';
+      updateBGHeight();
+      updateEstimate(s);
+    });
+    container.appendChild(label);
+  });
+  const sel = state.suggestions.find(s => s.value === state.layerHeight) || state.suggestions[1] || state.suggestions[0];
+  if (sel) updateEstimate(sel);
+  updateBGHeight();
+}
+
+function onCustomLH(val) {
+  const lh = parseFloat(val);
+  if (!isNaN(lh) && lh > 0) {
+    state.layerHeight = val;
+    document.querySelectorAll('input[name=lh]').forEach(r => r.checked = false);
+    updateBGHeight();
+    document.getElementById('lh-estimate').textContent = '';
+  }
+}
+
+function updateBGHeight() {
+  const lh = parseFloat(state.layerHeight);
+  if (!isNaN(lh)) {
+    const minLayers = Math.max(7, Math.ceil(0.56 / lh));
+    document.getElementById('bg-height').value = (minLayers * lh).toFixed(2);
+  }
+}
+
+function updateEstimate(s) {
+  document.getElementById('lh-estimate').textContent =
+    `~${s.layer_count} layers · ~${s.est_hours}h estimated`;
+}
+
+// ── Slot table ────────────────────────────────────────────────────────────────
+function renderSlotTable(filaments) {
+  const tbody = document.getElementById('slot-tbody');
+  tbody.innerHTML = '';
+  for (let i = 0; i < 4; i++) {
+    const f = filaments[i] || {};
+    const libMatch = state.library.find(l =>
+      l.brand.toLowerCase() === (f.brand||'').toLowerCase() &&
+      l.name.toLowerCase()  === (f.name||'').toLowerCase()
+    );
+    const td_val = libMatch?.td ?? f.td ?? '';
+    const color  = libMatch?.color || f.color || '#333333';
+    const label  = f.brand ? `${f.brand} - ${f.name}` : '—';
+
+    tbody.innerHTML += `
+      <tr>
+        <td style="color:var(--muted);font-weight:600">${i + 1}</td>
+        <td>
+          <select style="width:220px" onchange="onSlotFilamentChange(${i}, this.value)" id="slot-sel-${i}">
+            <option value="">${label}</option>
+            ${state.library.map(l =>
+              `<option value="${l.brand}|${l.name}" ${
+                l.brand.toLowerCase()===( f.brand||'').toLowerCase() &&
+                l.name.toLowerCase()===(f.name||'').toLowerCase() ? 'selected' : ''
+              }>${l.brand} - ${l.name}</option>`
+            ).join('')}
+          </select>
+        </td>
+        <td><input type="color" id="slot-color-${i}" value="${color}" oninput="syncSlotColor(${i})"></td>
+        <td class="td-val" id="slot-td-${i}">${td_val !== '' ? td_val : ''}</td>
+        <td>
+          <select id="slot-type-${i}" style="width:70px">
+            ${['PLA','PETG','ABS','ASA','TPU'].map(t =>
+              `<option ${(f.type||'PLA')===t?'selected':''}>${t}</option>`
+            ).join('')}
+          </select>
+        </td>
+      </tr>`;
+  }
+}
+
+function onSlotFilamentChange(slot, value) {
+  if (!value) return;
+  const [brand, name] = value.split('|');
+  const f = state.library.find(l => l.brand === brand && l.name === name);
+  if (f) {
+    document.getElementById(`slot-color-${slot}`).value = f.color;
+    document.getElementById(`slot-td-${slot}`).textContent = f.td;
+  }
+  rebuildColorChangesFromSlots();
+}
+
+function syncSlotColor(slot) {
+  rebuildColorChangesFromSlots();
+}
+
+// Find which slot (1-indexed) currently holds the filament matching a swap name
+function getSlotForSwapName(filamentName) {
+  const fn = filamentName.toLowerCase();
+  for (let i = 0; i < 4; i++) {
+    const sel = document.getElementById(`slot-sel-${i}`);
+    if (!sel || !sel.value) continue;
+    const [brand, name] = sel.value.split('|');
+    if (`${brand} - ${name}`.toLowerCase() === fn) return i + 1;
+    if (name && fn.includes(name.toLowerCase())) return i + 1;
+  }
+  return null;
+}
+
+// Re-derive color change slot assignments from current slot dropdowns
+function rebuildColorChangesFromSlots() {
+  if (!state.rawSwaps.length) {
+    // Just refresh swatches if no raw data
+    document.querySelectorAll('[data-cc-slot]').forEach(row => {
+      const sel = row.querySelector('select[data-slot-sel]');
+      if (!sel) return;
+      const colorInput = document.getElementById(`slot-color-${parseInt(sel.value) - 1}`);
+      const swatch = row.querySelector('.cc-swatch');
+      if (colorInput && swatch) swatch.style.background = colorInput.value;
+    });
+    return;
+  }
+  const remapped = state.rawSwaps.map(swap => {
+    const slot = getSlotForSwapName(swap.filament_name) || swap.slot || 1;
+    const colorInput = document.getElementById(`slot-color-${slot - 1}`);
+    return { ...swap, slot, color: colorInput?.value || swap.color };
+  });
+  renderColorChanges(remapped);
+}
+
+// ── Color changes table ───────────────────────────────────────────────────────
+function renderColorChanges(changes) {
+  const tbody = document.getElementById('cc-tbody');
+  tbody.innerHTML = '';
+  changes.forEach((c, i) => addColorChangeRow(c));
+}
+
+function addColorChangeRow(c = {}) {
+  const tbody = document.getElementById('cc-tbody');
+  const i     = tbody.children.length;
+  const color = c.color || '#333333';
+  const slot  = c.slot  || 1;
+  const top_z = c.top_z != null ? c.top_z : '';
+  const name  = c.filament_name || '';
+
+  const tr = document.createElement('tr');
+  tr.dataset.ccSlot = '1';
+  tr.innerHTML = `
+    <td><input type="number" step="0.01" value="${top_z}" style="width:80px" class="cc-topz"></td>
+    <td>
+      <select data-slot-sel onchange="onCCSlotChange(this)">
+        ${[1,2,3,4].map(s => `<option ${s===slot?'selected':''}>${s}</option>`).join('')}
+      </select>
+    </td>
+    <td><span class="swatch cc-swatch" style="background:${color}"></span></td>
+    <td style="color:var(--muted);font-size:12px">${name}</td>
+    <td><button class="btn btn-danger" onclick="this.closest('tr').remove()">✕</button></td>
+  `;
+  tbody.appendChild(tr);
+}
+
+function onCCSlotChange(sel) {
+  const slotIdx = parseInt(sel.value) - 1;
+  const color   = document.getElementById(`slot-color-${slotIdx}`)?.value || '#333333';
+  sel.closest('tr').querySelector('.cc-swatch').style.background = color;
+}
+
+// ── Generate ──────────────────────────────────────────────────────────────────
+async function runGenerate() {
+  const project = document.getElementById('project-select').value;
+  if (!project) return;
+
+  const filament_slots = [];
+  for (let i = 0; i < 4; i++) {
+    filament_slots.push({
+      color: document.getElementById(`slot-color-${i}`).value,
+      type:  document.getElementById(`slot-type-${i}`).value,
+    });
+  }
+
+  const color_changes = [];
+  document.querySelectorAll('#cc-tbody tr').forEach(tr => {
+    const top_z = parseFloat(tr.querySelector('.cc-topz').value);
+    const slot  = parseInt(tr.querySelector('[data-slot-sel]').value);
+    const color = filament_slots[slot - 1].color;
+    if (!isNaN(top_z)) color_changes.push({ top_z, slot, color });
+  });
+
+  const body = {
+    project,
+    nozzle:       state.nozzle,
+    layer_height: state.layerHeight,
+    filament_slots,
+    color_changes,
+  };
+
+  const logBox = document.getElementById('log-box');
+  logBox.innerHTML = '';
+  document.getElementById('gen-btn').disabled = true;
+
+  const resp = await fetch('/api/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  if (resp.status === 409) {
+    logBox.textContent = 'Generation already in progress.';
+    document.getElementById('gen-btn').disabled = false;
+    return;
+  }
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const lines = buf.split('\n');
+    buf = lines.pop();
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const msg = JSON.parse(line.slice(6));
+      if (msg.type === 'log') {
+        logBox.textContent += msg.text + '\n';
+        logBox.scrollTop = logBox.scrollHeight;
+      } else if (msg.type === 'done') {
+        const span = document.createElement('span');
+        span.className = 'done';
+        span.textContent = `\nDone: ${msg.output_path}\n`;
+        logBox.appendChild(span);
+        logBox.scrollTop = logBox.scrollHeight;
+        document.getElementById('gen-btn').disabled = false;
+      } else if (msg.type === 'error') {
+        const span = document.createElement('span');
+        span.className = 'error';
+        span.textContent = `\nError: ${msg.message}\n`;
+        logBox.appendChild(span);
+        logBox.scrollTop = logBox.scrollHeight;
+        document.getElementById('gen-btn').disabled = false;
+      }
+    }
+  }
+}
+
+// ── Library ───────────────────────────────────────────────────────────────────
+async function refreshLibrary() {
+  state.library = await fetch('/api/library').then(r => r.json());
+  renderLibraryTable();
+}
+
+function renderLibraryTable() {
+  const tbody = document.getElementById('lib-tbody');
+  const empty = document.getElementById('lib-empty');
+  tbody.innerHTML = '';
+  if (!state.library.length) { empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  state.library.forEach(f => {
+    tbody.innerHTML += `
+      <tr>
+        <td><span class="swatch" style="background:${f.color}"></span></td>
+        <td>${f.brand}</td>
+        <td>${f.name}</td>
+        <td>${f.type}</td>
+        <td class="td-val">${f.td}</td>
+        <td>
+          <button class="btn btn-danger" onclick="deleteFilament('${f.brand}','${f.name}')">✕</button>
+        </td>
+      </tr>`;
+  });
+}
+
+async function addToLibrary() {
+  const entry = {
+    brand: document.getElementById('lib-brand').value.trim(),
+    name:  document.getElementById('lib-name').value.trim(),
+    type:  document.getElementById('lib-type').value,
+    color: document.getElementById('lib-color').value,
+    td:    parseFloat(document.getElementById('lib-td').value) || 0,
+  };
+  if (!entry.brand || !entry.name) return;
+  await fetch('/api/library', {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(entry)
+  });
+  document.getElementById('lib-brand').value = '';
+  document.getElementById('lib-name').value  = '';
+  document.getElementById('lib-td').value    = '';
+  await refreshLibrary();
+}
+
+async function deleteFilament(brand, name) {
+  await fetch(`/api/library/${encodeURIComponent(brand)}/${encodeURIComponent(name)}`, { method: 'DELETE' });
+  await refreshLibrary();
+}
+
+// ── Photo pack modal ──────────────────────────────────────────────────────────
+async function openPackModal() {
+  document.getElementById('pack-modal').classList.add('open');
+  if (!state.packData.length) {
+    state.packData = await fetch('/api/filament-pack').then(r => r.json()).catch(() => []);
+  }
+  renderPackTable(state.packData);
+}
+
+function closePackModal() {
+  document.getElementById('pack-modal').classList.remove('open');
+}
+
+function filterPack() {
+  const q = document.getElementById('pack-search').value.toLowerCase();
+  const filtered = state.packData.filter(f =>
+    f.brand.toLowerCase().includes(q) || f.name.toLowerCase().includes(q)
+  );
+  renderPackTable(filtered);
+}
+
+function renderPackTable(data) {
+  const tbody = document.getElementById('pack-tbody');
+  tbody.innerHTML = '';
+  data.forEach((f, i) => {
+    tbody.innerHTML += `
+      <tr>
+        <td><input type="checkbox" data-pack-idx="${i}" ${f.in_library ? 'checked disabled' : ''}></td>
+        <td><span class="swatch" style="background:${f.color}"></span></td>
+        <td>${f.brand}</td>
+        <td>${f.name}</td>
+        <td>${f.type}</td>
+        <td class="td-val">${f.td}</td>
+        <td style="color:${f.in_library ? 'var(--accent)' : 'var(--muted)'}">
+          ${f.in_library ? 'In library' : '—'}
+        </td>
+      </tr>`;
+  });
+}
+
+async function importSelected() {
+  const checked = document.querySelectorAll('#pack-tbody input[type=checkbox]:checked:not(:disabled)');
+  const filaments = [];
+  checked.forEach(cb => {
+    const f = state.packData[parseInt(cb.dataset.packIdx)];
+    if (f) filaments.push({ brand: f.brand, name: f.name, type: f.type, color: f.color, td: f.td });
+  });
+  if (!filaments.length) { closePackModal(); return; }
+  await fetch('/api/library/import', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ filaments })
+  });
+  await refreshLibrary();
+  // Update in_library flags
+  filaments.forEach(f => {
+    const orig = state.packData.find(p => p.brand === f.brand && p.name === f.name);
+    if (orig) orig.in_library = true;
+  });
+  closePackModal();
+}
+
+// Close modal on backdrop click
+document.getElementById('pack-modal').addEventListener('click', function(e) {
+  if (e.target === this) closePackModal();
+});
+
+// ── New Project ───────────────────────────────────────────────────────────────
+let npState = { nozzle: 0.4, layerHeight: '0.08' };
+
+document.querySelectorAll('.tab').forEach(t => {
+  if (t.dataset.tab === 'new-project') {
+    t.addEventListener('click', () => {
+      if (!npState._statusLoaded) { npState._statusLoaded = true; refreshPodStatus(); }
+      npRenderLHRadios();
+      npUpdateBaseLayers();
+      npRenderFilamentRows();
+    });
+  }
+});
+
+async function refreshPodStatus() {
+  const el = document.getElementById('pod-status-text');
+  el.textContent = 'Checking...';
+  el.style.color = 'var(--muted)';
+  document.getElementById('pod-start-btn').style.display = 'none';
+  document.getElementById('pod-stop-btn').style.display  = 'none';
+  try {
+    const d = await fetch('/api/runpod/status').then(r => r.json());
+    if (d.status === 'not_found') {
+      el.textContent = 'Pod not found — check RUNPOD_POD_ID';
+      el.style.color = 'var(--danger)';
+    } else if (d.status === 'running') {
+      el.textContent = `Running — ${d.gpu || 'GPU'}${d.ssh_host ? ' · ' + d.ssh_host + ':' + d.ssh_port : ''}`;
+      el.style.color = '#5dd88a';
+      document.getElementById('pod-stop-btn').style.display = '';
+    } else {
+      el.textContent = `${d.status} — ${d.gpu || 'unknown GPU'}`;
+      el.style.color = 'var(--warn)';
+      document.getElementById('pod-start-btn').style.display = '';
+    }
+    npState.pod = d;
+  } catch(e) {
+    el.textContent = 'Error: ' + e.message;
+    el.style.color = 'var(--danger)';
+  }
+}
+
+async function setPodState(state) {
+  const el = document.getElementById('pod-status-text');
+  el.textContent = state === 'running' ? 'Starting...' : 'Stopping...';
+  el.style.color = 'var(--muted)';
+  document.getElementById('pod-start-btn').style.display = 'none';
+  document.getElementById('pod-stop-btn').style.display  = 'none';
+  try {
+    await fetch('/api/runpod/state', {
+      method: 'PUT', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ state })
+    });
+    for (let i = 0; i < 30; i++) {
+      await new Promise(r => setTimeout(r, 3000));
+      await refreshPodStatus();
+      if (npState.pod?.status === 'running' || npState.pod?.status === state) break;
+    }
+  } catch(e) {
+    el.textContent = 'Error: ' + e.message;
+    el.style.color = 'var(--danger)';
+  }
+}
+
+function npSetNozzle(val) {
+  npState.nozzle = val;
+  document.getElementById('np-nozzle-04').classList.toggle('active', val === 0.4);
+  document.getElementById('np-nozzle-02').classList.toggle('active', val === 0.2);
+  npRenderLHRadios();
+}
+
+function npDefaultBaseLayers(lh) {
+  // Mirror server-side _background_height: min 7 layers, min 0.56mm, must be integer multiple
+  let n = Math.max(7, Math.ceil(0.56 / lh));
+  while (Math.round(n * lh * 1e6) % Math.round(lh * 1e6) !== 0) n++;
+  return n;
+}
+
+function npUpdateBaseLayers() {
+  const lh = parseFloat(npState.layerHeight) || 0.08;
+  const n  = npDefaultBaseLayers(lh);
+  document.getElementById('np-base-layers').value = n;
+  npUpdateBaseMm();
+}
+
+function npUpdateBaseMm() {
+  const lh = parseFloat(npState.layerHeight) || 0.08;
+  const n  = parseInt(document.getElementById('np-base-layers').value) || 0;
+  const mm = Math.round(n * lh * 1000) / 1000;
+  document.getElementById('np-base-mm').textContent = n > 0 ? `= ${mm} mm` : '';
+}
+
+function npRenderLHRadios() {
+  const container = document.getElementById('np-lh-radios');
+  container.innerHTML = '';
+  const suggestions = [
+    { value: '0.04', label: '0.04mm (fine)' },
+    { value: '0.08', label: '0.08mm (standard)' },
+  ].filter(s => parseFloat(s.value) <= npState.nozzle * 0.75);
+  suggestions.forEach(s => {
+    const label = document.createElement('label');
+    label.className = 'radio-opt';
+    label.innerHTML = `<input type="radio" name="np-lh" value="${s.value}" ${s.value === npState.layerHeight ? 'checked' : ''}> ${s.label}`;
+    label.querySelector('input').addEventListener('change', () => {
+      npState.layerHeight = s.value;
+      document.getElementById('np-lh-custom').value = '';
+      npUpdateBaseLayers();
+    });
+    container.appendChild(label);
+  });
+}
+
+function npOnCustomLH(val) {
+  const lh = parseFloat(val);
+  if (!isNaN(lh) && lh > 0) {
+    npState.layerHeight = val;
+    document.querySelectorAll('input[name=np-lh]').forEach(r => r.checked = false);
+    npUpdateBaseLayers();
+  }
+}
+
+function npFilSrcChange() {
+  const auto = document.querySelector('input[name=np-fil-src][value=auto]').checked;
+  document.getElementById('np-fil-picker').style.display = auto ? 'none' : 'block';
+}
+
+function npRenderFilamentRows() {
+  const container = document.getElementById('np-fil-rows');
+  if (container.children.length === 0) npAddFilamentRow();
+}
+
+function npAddFilamentRow() {
+  const container = document.getElementById('np-fil-rows');
+  if (container.children.length >= 4) return;
+  const idx = container.children.length;
+  const div = document.createElement('div');
+  div.className = 'row';
+  div.innerHTML = `
+    <span style="color:var(--muted);font-weight:600;width:16px">${idx+1}</span>
+    <select style="flex:1" onchange="npOnFilamentSelect(${idx}, this.value)" id="np-fil-sel-${idx}">
+      <option value="">-- pick filament --</option>
+      ${state.library.map(l =>
+        `<option value="${l.brand}|${l.name}">${l.brand} - ${l.name}</option>`
+      ).join('')}
+    </select>
+    <span class="swatch" id="np-fil-swatch-${idx}" style="background:#333"></span>
+    <button class="btn btn-danger" onclick="this.parentElement.remove(); npRenumberFilRows()">✕</button>
+  `;
+  container.appendChild(div);
+}
+
+function npOnFilamentSelect(idx, value) {
+  if (!value) return;
+  const [brand, name] = value.split('|');
+  const f = state.library.find(l => l.brand === brand && l.name === name);
+  if (f) document.getElementById(`np-fil-swatch-${idx}`).style.background = f.color;
+}
+
+function npRenumberFilRows() {
+  document.querySelectorAll('#np-fil-rows .row').forEach((row, i) => {
+    row.querySelector('span').textContent = i + 1;
+  });
+}
+
+async function runNewProject() {
+  const name  = document.getElementById('np-name').value.trim();
+  const image = document.getElementById('np-image').files[0];
+
+  if (!name)  return npBanner('error', 'Enter a project name.');
+  if (!image) return npBanner('error', 'Select an image file.');
+
+  const logBox = document.getElementById('np-log-box');
+  logBox.innerHTML = '';
+  document.getElementById('np-run-btn').disabled = true;
+  document.getElementById('np-banner-area').innerHTML = '';
+
+  // Step 1: create project + upload image
+  npLog(logBox, `Creating project "${name}"...`);
+  const form = new FormData();
+  form.append('name', name);
+  form.append('image', image);
+  let created;
+  try {
+    const r = await fetch('/api/projects/create', { method: 'POST', body: form });
+    if (!r.ok) throw new Error(await r.text());
+    created = await r.json();
+  } catch(e) {
+    npLogError(logBox, 'Failed to create project: ' + e.message);
+    document.getElementById('np-run-btn').disabled = false;
+    return;
+  }
+  npLog(logBox, `Project created: ${created.project}`);
+
+  // Build filaments list
+  const auto = document.querySelector('input[name=np-fil-src][value=auto]').checked;
+  const filaments = [];
+  if (!auto) {
+    document.querySelectorAll('#np-fil-rows select').forEach(sel => {
+      if (!sel.value) return;
+      const [brand, name] = sel.value.split('|');
+      const f = state.library.find(l => l.brand === brand && l.name === name);
+      if (f) filaments.push(f);
+    });
+    if (!filaments.length) {
+      npLogError(logBox, 'No filaments selected.');
+      document.getElementById('np-run-btn').disabled = false;
+      return;
+    }
+  }
+
+  // Step 2: run AutoForge (SSE)
+  const baseLayers = parseInt(document.getElementById('np-base-layers').value) || 0;
+  const lh = parseFloat(npState.layerHeight) || 0.08;
+  const body = {
+    project:           created.project,
+    backend:           state.backend,
+    nozzle:            npState.nozzle,
+    layer_height:      npState.layerHeight,
+    filaments,
+    max_layers:        parseInt(document.getElementById('np-max-layers').value) || 75,
+    max_swaps:         parseInt(document.getElementById('np-max-swaps').value)  || 8,
+    max_colors:        parseInt(document.getElementById('np-max-colors').value) || 4,
+    background_height: baseLayers > 0 ? Math.round(baseLayers * lh * 1000) / 1000 : null,
+  };
+
+  const resp = await fetch('/api/run-autoforge', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(body),
+  });
+
+  if (resp.status === 409) {
+    npLogError(logBox, 'AutoForge already running.');
+    document.getElementById('np-run-btn').disabled = false;
+    return;
+  }
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const lines = buf.split('\n');
+    buf = lines.pop();
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const msg = JSON.parse(line.slice(6));
+      if (msg.type === 'log') {
+        npLog(logBox, msg.text);
+      } else if (msg.type === 'done') {
+        const span = document.createElement('span');
+        span.style.color = '#5dd88a';
+        span.textContent = `\nDone! Project "${msg.project}" is ready.\n`;
+        logBox.appendChild(span);
+        logBox.scrollTop = logBox.scrollHeight;
+        document.getElementById('np-run-btn').disabled = false;
+        // Reload projects and switch to Generate tab
+        await reloadProjects(msg.project);
+      } else if (msg.type === 'error') {
+        npLogError(logBox, msg.message);
+        document.getElementById('np-run-btn').disabled = false;
+      }
+    }
+  }
+}
+
+function npLog(box, text) {
+  box.textContent += text + '\n';
+  box.scrollTop = box.scrollHeight;
+}
+
+function npLogError(box, text) {
+  const span = document.createElement('span');
+  span.style.color = 'var(--danger)';
+  span.textContent = 'Error: ' + text + '\n';
+  box.appendChild(span);
+  box.scrollTop = box.scrollHeight;
+}
+
+function npBanner(type, msg) {
+  document.getElementById('np-banner-area').innerHTML =
+    `<div class="banner banner-${type === 'error' ? 'err' : 'warn'}">${msg}</div>`;
+}
+
+async function reloadProjects(selectProject) {
+  const projects = await fetch('/api/projects').then(r => r.json());
+  const sel = document.getElementById('project-select');
+  sel.innerHTML = '<option value="">Select project...</option>';
+  projects.forEach(p => {
+    const o = document.createElement('option');
+    o.value = o.textContent = p;
+    if (p === selectProject) o.selected = true;
+    sel.appendChild(o);
+  });
+  // Switch to Generate tab and auto-load
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(t => t.classList.remove('active'));
+  document.querySelector('.tab[data-tab=generate]').classList.add('active');
+  document.getElementById('tab-generate').classList.add('active');
+  if (selectProject) loadProject();
+}
+</script>
+</body>
+</html>

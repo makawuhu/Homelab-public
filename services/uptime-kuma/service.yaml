@@ -1,0 +1,8 @@
+deployable: true
+managed_by: homelab
+compose_path: compose.yml
+secrets: none
+healthcheck: https://status.yourdomain.com
+risk_level: medium
+data_paths: []
+notes: "Uptime monitoring on VM 101; state in named volume uptime-kuma-data"

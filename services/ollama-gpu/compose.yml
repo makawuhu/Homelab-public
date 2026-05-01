@@ -1,0 +1,19 @@
+services:
+  ollama-gpu:
+    image: ollama/ollama:0.7.1
+    container_name: ollama-gpu
+    ports:
+      - "11434:11434"
+    volumes:
+      - /opt/ollama:/root/.ollama
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
